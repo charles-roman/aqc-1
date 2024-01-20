@@ -1,0 +1,5 @@
+../Core/Src/rx/../flight/../sensors/../common/maths.h:85:21:mapf	1
+../Core/Src/rx/pwm.c:26:14:check_pulse_width	2
+../Core/Src/rx/pwm.c:42:13:get_pulse_width	3
+../Core/Src/rx/pwm.c:83:6:read_rc_input	5
+../Core/Src/rx/pwm.c:114:6:get_user_input	1
