@@ -1,0 +1,2 @@
+../Core/Src/flight/attitude.c:21:7:get_accel_vec_mag	1
+../Core/Src/flight/attitude.c:40:6:get_attitude	1

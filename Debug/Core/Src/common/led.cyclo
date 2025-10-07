@@ -1,0 +1,3 @@
+../Core/Src/common/led.c:20:6:blink_led	2
+../Core/Src/common/led.c:42:6:toggle_led	2
+../Core/Src/common/led.c:60:6:led_status	5

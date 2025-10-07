@@ -1,0 +1,5 @@
+../Core/Src/rx/../flight/../sensors/../common/maths.h:85:21:mapf	32	static
+../Core/Src/rx/pwm.c:26:14:check_pulse_width	16	static
+../Core/Src/rx/pwm.c:42:13:get_pulse_width	32	static
+../Core/Src/rx/pwm.c:83:6:read_rc_input	16	static
+../Core/Src/rx/pwm.c:114:6:get_user_input	16	static

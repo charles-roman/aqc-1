@@ -1,0 +1,6 @@
+../Core/Src/sensors/mag.c:27:16:platform_write	2
+../Core/Src/sensors/mag.c:48:16:platform_read	2
+../Core/Src/sensors/mag.c:65:6:lis3mdl_setup	3
+../Core/Src/sensors/mag.c:108:13:get_calibrated_measurements	1
+../Core/Src/sensors/mag.c:128:13:lis3mdl_read_data	1
+../Core/Src/sensors/mag.c:151:6:read_mag_data	1

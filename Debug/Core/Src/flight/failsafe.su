@@ -1,0 +1,4 @@
+../Core/Src/flight/failsafe.c:20:9:throttle_idle	24	static
+../Core/Src/flight/failsafe.c:37:9:armed	16	static
+../Core/Src/flight/failsafe.c:53:9:right_side_up	24	static
+../Core/Src/flight/failsafe.c:69:9:attitude_within_boundaries	24	static
