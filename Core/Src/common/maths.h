@@ -7,11 +7,8 @@
 
 #pragma once
 
-//#ifndef SRC_MATHS_H_
-//#define SRC_MATHS_H_
-//#endif /* SRC_MATHS_H_ */
-
 /* Includes ------------------------------------------------------------------*/
+#include <stdbool.h>
 #include <stdint.h>
 
 /* Exported constants --------------------------------------------------------*/
@@ -34,55 +31,56 @@
 
 #define sq(x) ((x)*(x))
 
-/*
 #define MIN(a,b) \
   __extension__ ({ __typeof__ (a) _a = (a); \
   __typeof__ (b) _b = (b); \
   _a < _b ? _a : _b; })
+
 #define MAX(a,b) \
   __extension__ ({ __typeof__ (a) _a = (a); \
   __typeof__ (b) _b = (b); \
   _a > _b ? _a : _b; })
-*/
 
 #define ABS(x) \
   __extension__ ({ __typeof__ (x) _x = (x); \
   _x > 0 ? _x : -_x; })
+
 #define SIGN(x) \
   __extension__ ({ __typeof__ (x) _x = (x); \
   (_x > 0) - (_x < 0); })
 
 /* Exported static inline functions ---------------------------------------------*/
-static inline float constrainf(float val, float min, float max)
-{
-	if (val < min)
+static inline float constrainf(float val, float min, float max) {
+	if (val < min) {
         return min;
-	else if (val > max)
+	} else if (val > max) {
 		return max;
-    else
+	} else {
         return val;
+	}
 }
 
-static inline float avgf(float arr[], int len)
-{
-	float sum, avg;
-	sum = 0;
-	for (int i = 0; i < len; i++)
-	{
+static inline bool inrangef(float val, float min, float max) {
+	return (val >= min) && (val <= max);
+}
+
+static inline float avgf(const float arr[], size_t len) {
+	float avg, sum = 0.0f;
+
+	for (size_t i = 0; i < len; ++i) {
 		sum += arr[i];
 	}
-	avg = sum/len;
+	avg = sum / (float)len;
+
 	return avg;
 }
 
-static inline int signum(float num)
-{
+static inline int signumf(float val) {
 	if (num > 0.0) return 1;
 	if (num < 0.0) return -1;
 	return 0;
 }
 
-static inline float mapf(float val, float in_min, float in_max, float out_min, float out_max)
-{
+static inline float mapf(float val, float in_min, float in_max, float out_min, float out_max) {
 	return (val - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
