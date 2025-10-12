@@ -1,5 +1,0 @@
-../Core/Src/setup/setup.c:25:6:rcInput	16	static
-../Core/Src/setup/setup.c:51:6:escInput	16	static
-../Core/Src/setup/setup.c:83:6:arm_drone	16	static
-../Core/Src/setup/setup.c:111:9:ready_to_fly	24	static
-../Core/Src/setup/setup.c:150:6:sensor_setup	16	static

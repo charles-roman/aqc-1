@@ -1,4 +1,0 @@
-../Core/Src/flight/../sensors/../common/maths.h:56:21:constrainf	3
-../Core/Src/flight/mixer.c:24:6:motor_mixing	1
-../Core/Src/flight/mixer.c:46:6:thrust_compensation	2
-../Core/Src/flight/mixer.c:65:6:duty_cycle_set	5
