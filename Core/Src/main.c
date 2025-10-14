@@ -38,7 +38,7 @@
 #include "flight/mixer.h"
 #include "setup/setup.h"
 #include "sensors/imu.h"
-#include "rx/pwm_rx.h"
+#include "rx/rx.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
