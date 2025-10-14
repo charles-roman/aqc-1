@@ -23,9 +23,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include <string.h>
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include <math.h>
 #include "usbd_cdc_if.h"
 
@@ -38,7 +38,7 @@
 #include "flight/mixer.h"
 #include "setup/setup.h"
 #include "sensors/imu.h"
-#include "rx/pwm.h"
+#include "rx/pwm_rx.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -144,24 +144,26 @@ int main(void)
   MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
 
+  /* Cache Timer Frequencies */
+  Cache_TIMCLKRefFreq(&htim2);
+  Cache_TIMCLKRefFreq(&htim3);
+
   /* Sensor Setup */
   sensor_setup(&sensPackage);
 
   /* Initialize ESC Coms */		// calibrate_throttle() ?
   escInput(ENABLE);
 
-  /* Initialize RC Input Channels */
-  rcInput(ENABLE);
+  /* Initialize and Start Rx Comms */
+  init_rx_comm_protocol();
+  start_rx_comm_capture();
+  delay(20); // wait rx boot time
 
   /* Start Timer */
   start_timer(&htim6); //general purpose timer
 
-  /* Wait RX Boot Time */
-  delay(20);
-
   /* Check for arm request from user */
-  while(!armed())
-  {
+  while (!is_armed(ARM_GPIO_Port, ARM_Pin)) {
 	  led_status(WAITING);
   }
 
@@ -378,7 +380,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 84-1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 4294967295;
+  htim2.Init.Period = 65535;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -400,7 +402,7 @@ static void MX_TIM2_Init(void)
   {
     Error_Handler();
   }
-  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_BOTHEDGE;
+  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
   sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
   sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
   sConfigIC.ICFilter = 0;
@@ -462,7 +464,7 @@ static void MX_TIM3_Init(void)
   {
     Error_Handler();
   }
-  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_BOTHEDGE;
+  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
   sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
   sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
   sConfigIC.ICFilter = 0;
@@ -756,17 +758,6 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-
-/**
-  * @brief  Input Capture Callback. ISR triggered when mc receives signal from rx
-  *
-  * @param  htim 	pointer to HAL Timer struct
-  * @retval None
-  */
-void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
-{
-	read_rc_input(htim);
-}
 
 /* USER CODE END 4 */
 
