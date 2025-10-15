@@ -8,7 +8,7 @@
 #include <math.h>
 #include "failsafe.h"
 #include "system.h"
-#include "../rx/pwm.h"
+#include "../rx/rx.h"
 #include "../sensors/imu.h"
 
 /**
@@ -20,26 +20,10 @@
 uint8_t throttle_idle(systemState *st)
 {
 	uint8_t ret;
-	get_user_input(st);
+	get_rc_request(st);
 
 	/* Determine if throttle is within idle tolerance */
 	ret = (st->throttle.request < 5);
-
-	return ret;
-}
-
-/**
-  * @brief determines if quad is currently armed
-  *
-  * @param None
-  * @retval ret		logical value (1 or 0)
-  */
-uint8_t armed(void)
-{
-	uint8_t ret;
-
-	/* Determine if arm switch (SE) is active */
-	ret = HAL_GPIO_ReadPin(ARM_GPIO_Port, ARM_Pin);
 
 	return ret;
 }

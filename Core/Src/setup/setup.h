@@ -23,8 +23,6 @@ extern TIM_HandleTypeDef htim4;
 extern TIM_HandleTypeDef htim8;
 
 /* Exported functions prototypes ---------------------------------------------*/
-void rcInput(uint8_t enable);
-
 void escInput(uint8_t enable);
 
 void arm_drone(uint8_t arm);

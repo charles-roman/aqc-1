@@ -14,20 +14,7 @@
 #include "attitude.h"
 #include "pid.h"
 #include "mixer.h"
-#include "../rx/pwm.h"
 #include "../common/maths.h"
-
-/**
-  * @brief user input and system requests
-  *
-  * @param  st		pointer to systemState struct
-  * @retval None
-  */
-void get_state_request(systemState *st)
-{
-	get_user_input(st);
-	//update_position_request();
-}
 
 /**
   * @brief read sensor data for all devices

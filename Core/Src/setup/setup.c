@@ -17,32 +17,6 @@
 #include "../sensors/mag.h"
 
 /**
-  * @brief enable/disable rc communication
-  *
-  * @param  enable	logical value (1 or 0)
-  * @retval None
-  */
-void rcInput(uint8_t enable)
-{
-	if (enable)
-	{
-		/* Init Input Capture Interrupts */
-		HAL_TIM_IC_Start_IT(&htim3, TIM_CHANNEL_1);	//pin A2, rx ch2, pitch request
-		HAL_TIM_IC_Start_IT(&htim3, TIM_CHANNEL_2);	//pin A3, rx ch1, roll request
-		HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_3);	//pin TX, rx ch3, throttle request
-		HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_4);	//pin RX, rx ch4, yaw request
-	}
-	else if (!enable)
-	{
-		/* De-Init Input Capture Interrupts */
-		HAL_TIM_IC_Stop_IT(&htim3, TIM_CHANNEL_1);
-		HAL_TIM_IC_Stop_IT(&htim3, TIM_CHANNEL_2);
-		HAL_TIM_IC_Stop_IT(&htim2, TIM_CHANNEL_3);
-		HAL_TIM_IC_Stop_IT(&htim2, TIM_CHANNEL_4);
-	}
-}
-
-/**
   * @brief enable/disable esc communication
   *
   * @param  enable	logical value (1 or 0)

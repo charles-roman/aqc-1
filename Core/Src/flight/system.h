@@ -54,8 +54,6 @@ typedef struct mtr_ctrlCommands {
 } mtrCommands;
 
 /* Exported functions prototypes ---------------------------------------------*/
-void get_state_request(systemState *st);
-
 void read_sensor_data(sensorPackage *sp);
 
 void estimate_state(sensorPackage *sp, systemState *st);

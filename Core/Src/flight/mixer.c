@@ -11,7 +11,6 @@
 #include "attitude.h"
 #include "system.h"
 #include "../common/maths.h"
-#include "../rx/pwm.h"
 
 /**
   * @brief motor mixing algorithm
