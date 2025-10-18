@@ -6,14 +6,14 @@
  */
 
 #include "main.h"
-#include "setup.h"
-#include "../flight/failsafe.h"
-#include "../flight/attitude.h"
-#include "../flight/mixer.h"
-#include "../flight/system.h"
-#include "../common/maths.h"
-#include "../common/led.h"
-#include "../common/time.h"
+#include "setup/setup.h"
+#include "flight/failsafe.h"
+#include "flight/attitude.h"
+#include "flight/mixer.h"
+#include "flight/system.h"
+#include "common/maths.h"
+#include "common/led.h"
+#include "common/time.h"
 #include "../sensors/mag.h"
 
 /**

@@ -6,10 +6,10 @@
  */
 
 #include <math.h>
-#include "failsafe.h"
-#include "system.h"
-#include "../rx/rx.h"
-#include "../sensors/imu.h"
+#include "flight/failsafe.h"
+#include "flight/system.h"
+#include "rx/rx.h"
+#include "sensors/imu/imu.h"
 
 /**
   * @brief determines if throttle is in idle position (or close to it)

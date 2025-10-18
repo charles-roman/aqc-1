@@ -5,16 +5,16 @@
  *      Author: charlieroman
  */
 
-#include "../sensors/imu.h"
+#include "sensors/imu/imu.h"
 #include "../sensors/mag.h"
 //#include "../sensors/bar.h"
 //#include "../sensors/gps.h"
-#include "system.h"
+#include "flight/system.h"
 //#include "position.h"
-#include "attitude.h"
-#include "pid.h"
-#include "mixer.h"
-#include "../common/maths.h"
+#include "flight/attitude.h"
+#include "flight/pid.h"
+#include "flight/mixer.h"
+#include "common/maths.h"
 
 /**
   * @brief read sensor data for all devices

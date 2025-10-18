@@ -8,10 +8,10 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
-#include "../common/maths.h"
-#include "pid.h"
-#include "mixer.h"
-#include "system.h"
+#include "common/maths.h"
+#include "flight/pid.h"
+#include "flight/mixer.h"
+#include "flight/system.h"
 
 /**
   * @brief attitude command saturation check

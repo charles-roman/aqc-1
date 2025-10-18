@@ -14,7 +14,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include <stdint.h>
 #include "system.h"
-#include "../common/maths.h"
+#include "common/maths.h"
 
 /* Private defines -----------------------------------------------------------*/
 /* SETTINGS-------------------------------------------------------------------*/ // CAUTION WHEN ADJUSTING, CRITICAL SETTINGS

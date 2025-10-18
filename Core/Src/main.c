@@ -37,7 +37,7 @@
 #include "flight/pid.h"
 #include "flight/mixer.h"
 #include "setup/setup.h"
-#include "sensors/imu.h"
+#include "sensors/imu/imu.h"
 #include "rx/rx.h"
 #include "esc/esc.h"
 /* USER CODE END Includes */

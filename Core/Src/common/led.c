@@ -5,10 +5,10 @@
  *      Author: charlieroman
  */
 
-#include "time.h"
-#include "led.h"
+#include "common/time.h"
+#include "common/led.h"
 #include "main.h"
-#include "maths.h"
+#include "common/maths.h"
 
 /*
  * @brief blink led at a specified frequency (Hz)

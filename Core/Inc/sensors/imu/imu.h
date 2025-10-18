@@ -14,7 +14,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include <stdint.h>
 #include "main.h"
-#include "../common/maths.h"
+#include "common/maths.h"
 
 /* Private defines -----------------------------------------------------------*/
 

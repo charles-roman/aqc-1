@@ -5,7 +5,7 @@
  *      Author: charlieroman
  */
 
-#include "time.h"
+#include "common/time.h"
 
 /*
  * @brief  computes and returns desired timer clock reference frequency

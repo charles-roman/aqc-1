@@ -13,7 +13,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "system.h"
-#include "../esc/esc.h"
+#include "esc/esc.h"
 
 /* Exported functions prototypes ---------------------------------------------*/
 void motor_mixing(systemState *st, mtr_cmds_t *cmd);

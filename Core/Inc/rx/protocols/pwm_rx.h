@@ -10,9 +10,9 @@
 /* Includes ------------------------------------------------------------------*/
 #include <stdbool.h>
 #include <stdint.h>
-#include "../flight/system.h"
+#include "flight/system.h"
 #include "stm32f4xx_hal.h"
-#include "../common/settings.h"
+#include "common/settings.h"
 
 /* Private defines -----------------------------------------------------------*/
 // STATE LIMITS (ANGLE MODE)

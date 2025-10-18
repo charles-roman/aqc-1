@@ -6,10 +6,10 @@
  */
 
 #include <math.h>
-#include "attitude.h"
-#include "system.h"
-#include "../common/maths.h"
-#include "../sensors/imu.h"
+#include "flight/attitude.h"
+#include "flight/system.h"
+#include "common/maths.h"
+#include "sensors/imu/imu.h"
 
 
 /**

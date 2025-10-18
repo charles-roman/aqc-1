@@ -7,10 +7,10 @@
 
 #include <string.h>
 #include "main.h"
-#include "imu.h"
-#include "../common/maths.h"
-#include "../common/time.h"
-#include "../drivers/lsm6dsox_reg.h"
+#include "sensors/imu/imu.h"
+#include "common/maths.h"
+#include "common/time.h"
+#include "lsm6dsox_reg.h"
 
 static stmdev_ctx_t dev_ctx;
 

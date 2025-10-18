@@ -7,11 +7,11 @@
 
 #include <stdint.h>
 #include "stm32f4xx_hal.h"
-#include "pwm_esc.h"
-#include "../common/time.h"
-#include "../common/maths.h"
-#include "../common/settings.h"
-#include "../common/hardware.h"
+#include "esc/protocols/pwm_esc.h"
+#include "common/time.h"
+#include "common/maths.h"
+#include "common/settings.h"
+#include "common/hardware.h"
 
 /**
   * @brief  PWM Config Settings

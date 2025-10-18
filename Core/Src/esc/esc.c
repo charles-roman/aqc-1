@@ -5,9 +5,9 @@
  *      Author: charlieroman
  */
 
-#include "esc.h"
-#include "protocols/pwm_esc.h"
-#include "../common/settings.h"
+#include "esc/esc.h"
+#include "esc/protocols/pwm_esc.h"
+#include "common/settings.h"
 
 /**
   * @brief  Esc Protocol Setting

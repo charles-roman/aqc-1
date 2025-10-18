@@ -13,7 +13,7 @@
 
 #include <stdint.h>
 #include "system.h"
-#include "../sensors/imu.h"
+#include "sensors/imu/imu.h"
 
 uint8_t throttle_idle(systemState *st);
 

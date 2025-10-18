@@ -7,10 +7,10 @@
 
 #include <math.h>
 #include "main.h"
-#include "mixer.h"
-#include "attitude.h"
-#include "system.h"
-#include "../common/maths.h"
+#include "flight/mixer.h"
+#include "flight/attitude.h"
+#include "flight/system.h"
+#include "common/maths.h"
 
 /**
   * @brief motor mixing algorithm

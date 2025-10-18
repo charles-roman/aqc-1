@@ -13,7 +13,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include <stdint.h>
-#include "../sensors/imu.h"
+#include "sensors/imu/imu.h"
 
 /* Exported types ------------------------------------------------------------*/
 typedef struct sensorPackage {

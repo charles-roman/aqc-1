@@ -5,9 +5,9 @@
  *      Author: charlieroman
  */
 
-#include "../common/maths.h"
-#include "../common/time.h"
-#include "pwm_rx.h"
+#include "common/maths.h"
+#include "common/time.h"
+#include "rx/protocols/pwm_rx.h"
 
 // Input Capture Timer Clock Reference Freq
 static float IC_TIMx_CLK_REF_FREQ_MHZ;

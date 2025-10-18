@@ -13,8 +13,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include <stdint.h>
-#include "../flight/system.h"
-#include "../sensors/imu.h"
+#include "flight/system.h"
+#include "sensors/imu/imu.h"
 
 /* External Variables --------------------------------------------------------*/
 extern TIM_HandleTypeDef htim2;

@@ -5,8 +5,12 @@
  *      Author: charlieroman
  */
 
-#include "rx.h"
-#include "pwm_rx.h"
+#include "rx/rx.h"
+#include "rx/protocols/pwm_rx.h"
+
+void rx_init(void) {
+
+}
 
 /**
   * @brief determines if quad is currently armed
@@ -14,11 +18,11 @@
   * @param None
   * @retval ret		logical value (1 or 0)
   */
-bool is_armed(GPIO_TypeDef* ARM_GPIO_Port, uint16_t ARM_GPIO_Pin) {
+bool is_armed(GPIO_TypeDef* ARM_GPIO_PORT, uint16_t ARM_GPIO_PIN) {
 	bool ret;
 
 	/* Determine if arm switch (SE) is active */
-	ret = (HAL_GPIO_ReadPin(ARM_GPIO_Port, ARM_GPIO_Pin) == GPIO_PIN_SET);
+	ret = (HAL_GPIO_ReadPin(ARM_GPIO_PORT, ARM_GPIO_PIN) == GPIO_PIN_SET);
 
 	return ret;
 }
@@ -50,6 +54,6 @@ void start_rx_comm_capture(void) {
   * @param  st	pointer to system state handle
   * @retval None
   */
-void get_rc_request(systemState *st) {
-	get_rc_requests_over_pwm(st);
+void get_rc_requests(rc_reqs_t *req) {
+	get_rc_requests_over_pwm(req);
 }
