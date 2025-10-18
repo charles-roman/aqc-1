@@ -91,7 +91,4 @@ void actuator_set(sensorPackage *sp, systemState *st, mtrCommands *cmd)
 
 	/* Thrust Compensation for Roll/Pitch to Maintain Altitude */
 	//thrust_compensation(&sp->imu.accel, cmd);
-
-	/* Set Duty Cycle */
-	duty_cycle_set(cmd);
 }

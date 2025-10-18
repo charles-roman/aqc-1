@@ -46,13 +46,6 @@ typedef struct systemState {
 	state throttle;
 } systemState;
 
-typedef struct mtr_ctrlCommands {
-	float mtr1;
-	float mtr2;
-	float mtr3;
-	float mtr4;
-} mtrCommands;
-
 /* Exported functions prototypes ---------------------------------------------*/
 void read_sensor_data(sensorPackage *sp);
 

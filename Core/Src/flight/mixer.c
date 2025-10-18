@@ -54,34 +54,3 @@ void thrust_compensation(sensor_3d *accel, mtrCommands *cmd)
 	cmd->mtr3 = thrust_ratio*(cmd->mtr3) - MTR_CMD_RANGE*(thrust_ratio - 1);
 	cmd->mtr4 = thrust_ratio*(cmd->mtr4) - MTR_CMD_RANGE*(thrust_ratio - 1);
 }
-
-/**
-  * @brief set duty cycle for pwm signals to ESCs
-  *
-  * @param  cmd		pointer to mtrCommands struct
-  * @retval None
-  */
-void duty_cycle_set(mtrCommands *cmd)
-{
-	/* NaN Check */
-	if isnan(cmd->mtr1)
-		cmd->mtr1 = MTR_CMD_MIN;
-	if isnan(cmd->mtr2)
-		cmd->mtr2 = MTR_CMD_MIN;
-	if isnan(cmd->mtr3)
-		cmd->mtr3 = MTR_CMD_MIN;
-	if isnan(cmd->mtr4)
-		cmd->mtr4 = MTR_CMD_MIN;
-
-	/* Constrain */
-	cmd->mtr1 = constrainf(cmd->mtr1, MTR_CMD_IDLE, MTR_CMD_LIMIT);
-	cmd->mtr2 = constrainf(cmd->mtr2, MTR_CMD_IDLE, MTR_CMD_LIMIT);
-	cmd->mtr3 = constrainf(cmd->mtr3, MTR_CMD_IDLE, MTR_CMD_LIMIT);
-	cmd->mtr4 = constrainf(cmd->mtr4, MTR_CMD_IDLE, MTR_CMD_LIMIT);
-
-	/* Set Duty Cycle; (can adjust CCR directly for speed) */
-	__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_1, cmd->mtr3);
-	__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_2, cmd->mtr4);
-	__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_3, cmd->mtr2);
-	__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, cmd->mtr1);
-}
