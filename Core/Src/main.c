@@ -39,6 +39,7 @@
 #include "setup/setup.h"
 #include "sensors/imu.h"
 #include "rx/rx.h"
+#include "esc/esc.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -106,7 +107,7 @@ int main(void)
   /* USER CODE BEGIN 1 */
   /* Declare or Initialize Private Variables */
   uint8_t ready;
-  static mtrCommands mtrCmds;
+  static mtr_cmds_t mtrCmds;
   static sensorPackage sensPackage;
   static systemState sysState = {{.command_limit = ROLL_CMD_LIM, .gains = ROLL_PID, .clamp = 1},
   	  	  	  	  	  	  	  	 {.command_limit = PITCH_CMD_LIM, .gains = PITCH_PID, .clamp = 1},
@@ -144,15 +145,11 @@ int main(void)
   MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
 
-  /* Cache Timer Frequencies */
-  Cache_TIMCLKRefFreq(&htim2);
-  Cache_TIMCLKRefFreq(&htim3);
-
   /* Sensor Setup */
   sensor_setup(&sensPackage);
 
-  /* Initialize ESC Coms */		// calibrate_throttle() ?
-  escInput(ENABLE);
+  /* Initialize ESC */
+  esc_init();
 
   /* Initialize and Start Rx Comms */
   init_rx_comm_protocol();
@@ -175,8 +172,8 @@ int main(void)
 	  /* Signal Flight Ready Status with LED */
 	  led_status(READY);
 
-	  /* Initialize Motor Inputs (PWM Output) */
-	  arm_drone(ENABLE);
+	  /* Arm Quad-copter (Set Motor Speeds to Idle) */
+	  arm();
   }
   else if (!ready)
   {
@@ -211,6 +208,9 @@ int main(void)
 		/* Apply Motor Mixing Algorithm & Set Duty Cycles */
 		actuator_set(&sensPackage, &sysState, &mtrCmds);
 
+		/* Set Motor Commands */
+		set_motor_commands(&mtrCmds);
+
 		/* Write to SD Card */
 		//record_data(&sysState, &sensPackage, &mtrCmds)
 
@@ -228,8 +228,8 @@ int main(void)
 
 	 else
 	 {
-		/* Disarm Drone */
-		arm_drone(DISABLE);
+		/* Disarm Quad-copter (Shuts Off Motors) */
+		disarm();
 
 		/* Signal Waiting Status with LED */
 		led_status(WAITING);
@@ -288,7 +288,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV4;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
   {
@@ -642,7 +642,7 @@ static void MX_TIM8_Init(void)
 
   /* USER CODE END TIM8_Init 1 */
   htim8.Instance = TIM8;
-  htim8.Init.Prescaler = 56-1;
+  htim8.Init.Prescaler = 28-1;
   htim8.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim8.Init.Period = 60000-1;
   htim8.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
