@@ -25,8 +25,10 @@
 #define SEC_TO_USEC(time) ((time) * 1000000)
 #define HZ_TO_MHZ(freq)   ((freq) / 1000000)
 #define MHZ_TO_HZ(freq)   ((freq) * 1000000)
-#define HZ_TO_INTERVAL(x) (1.0f / (x))
+#define HZ_TO_INTERVAL(x) (1 / (x))
+#define INTERVAL_TO_HZ(x) (1 / (x))
 #define HZ_TO_INTERVAL_US(x) (1000000 / (x))
+#define US_INTERVAL_TO_HZ(x) (1000000 / (x))
 #define HZ_TO_RAD_PER_SEC(freq) ((freq) * (2 * PI))
 
 #define sq(x) ((x)*(x))
