@@ -20,50 +20,103 @@
 static const esc_protocol_interface_t *esc_driver = NULL;
 
 /**
+  * @brief helper function to validate esc_driver initialization
+  *
+  * @param  driver	pointer to esc driver
+  *
+  * @retval boolean
+  */
+static bool valid_esc_driver(esc_protocol_interface_t *driver) {
+	return (driver &&
+			driver->init &&
+		    driver->deinit &&
+			driver->start &&
+			driver->stop &&
+			driver->arm &&
+			driver->disarm &&
+			driver->set_motor_commands);
+}
+
+/**
   * @brief esc API call to init esc protocol driver interface and start comms
+  *
+  * @param  None
+  * @retval esc status
+  */
+esc_status_t esc_init(void) {
+	/* Use pre-processor conditionals based on configured protocol to initialize esc_driver.
+	 * NOTE: hot-swaps would require ESC_PROTOCOL to be a modifiable variable */
+	#if ESC_PROTOCOL == ESC_PWM_PROTOCOL_ID
+	esc_driver = &pwm_driver;
+	#else
+	return ESC_ERROR_FATAL;
+	#endif
+
+	if (!valid_esc_driver(esc_driver))
+		return ESC_ERROR_FATAL;
+
+	return esc_driver->init();
+}
+
+/**
+  * @brief esc API call to deinit esc protocol driver interface
   *
   * @param  None
   * @retval None
   */
-void esc_init(void) {
-	/* NOTE: use pre-processor conditionals based
-	* on configured protocol to initialize esc_driver */
-	#if ESC_PROTOCOL == ESC_PWM_PROTOCOL_ID
-	esc_driver = &pwm_driver;
-	#endif
+esc_status_t esc_deinit(void) {
+	if (!esc_driver)
+		return ESC_ERROR_WARN;
 
-	esc_driver->init();
-	esc_driver->start();
+	esc_driver->deinit();
+	esc_driver = NULL;
+
+	return ESC_OK;
+}
+
+/**
+  * @brief esc API call to start comms
+  *
+  * @param  None
+  * @retval esc status
+  */
+esc_status_t esc_start(void) {
+	if (!esc_driver)
+		return ESC_ERROR_FATAL;
+
+	return esc_driver->start();
 }
 
 /**
   * @brief esc API call to stop comms
   *
   * @param  None
-  * @retval None
+  * @retval esc status
   */
-void esc_deinit(void) {
-	if (esc_driver && esc_driver->stop)
-		esc_driver->stop();
+esc_status_t esc_stop(void) {
+	if (!esc_driver)
+		return ESC_ERROR_FATAL;
+
+	return esc_driver->stop();
 }
 
 /**
-  * @brief esc API call to arm quad-copter (idles motors)
+  * @brief esc API call to arm system (idles motors)
   *
   * @param  None
   * @retval None
   */
-void arm(void) {
+void esc_arm(void) {
 	esc_driver->arm();
 }
 
 /**
-  * @brief esc API call to disarm quad-copter (stops motors)
+  * @brief esc API call to disarm system (stops motors)
   *
   * @param  None
   * @retval None
   */
-void disarm(void) {
+void esc_disarm(void) {
 	esc_driver->disarm();
 }
 
@@ -72,8 +125,13 @@ void disarm(void) {
   *
   * @param  cmd		pointer to motor commands handle
   *
-  * @retval None
+  * @retval esc status
   */
-void set_motor_commands(mtr_cmds_t *cmd) {
-	esc_driver->set_motor_commands(cmd);
+esc_status_t esc_set_motor_commands(mtr_cmds_t *cmd) {
+	/* NOTE: include this check when integrating hot-swaps or other features which may
+	 * call esc_deinit during runtime, otherwise leave lightweight due to call frequency
+	 *
+	 * if (!esc_driver) return ESC_ERROR_FATAL; */
+
+	return esc_driver->set_motor_commands(cmd);
 }
