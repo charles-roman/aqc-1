@@ -107,6 +107,7 @@ int main(void)
   /* USER CODE BEGIN 1 */
   /* Declare or Initialize Private Variables */
   uint8_t ready;
+  esc_status_t esc_status;
   static mtr_cmds_t mtrCmds;
   static sensorPackage sensPackage;
   static systemState sysState = {{.command_limit = ROLL_CMD_LIM, .gains = ROLL_PID, .clamp = 1},
@@ -148,8 +149,11 @@ int main(void)
   /* Sensor Setup */
   sensor_setup(&sensPackage);
 
-  /* Initialize ESC */
-  esc_init();
+  /* Initialize ESC and Start Comms*/
+  esc_status = esc_init();
+  // CHECK(esc_status);
+  esc_status = esc_start();
+  // CHECK(esc_status);
 
   /* Initialize and Start Rx Comms */
   init_rx_comm_protocol();
@@ -172,8 +176,8 @@ int main(void)
 	  /* Signal Flight Ready Status with LED */
 	  led_status(READY);
 
-	  /* Arm Quad-copter (Set Motor Speeds to Idle) */
-	  arm();
+	  /* Arm ESC (Set Motor Speeds to Idle) */
+	  esc_arm();
   }
   else if (!ready)
   {
@@ -209,7 +213,7 @@ int main(void)
 		actuator_set(&sensPackage, &sysState, &mtrCmds);
 
 		/* Set Motor Commands */
-		set_motor_commands(&mtrCmds);
+		esc_status = set_motor_commands(&mtrCmds);
 
 		/* Write to SD Card */
 		//record_data(&sysState, &sensPackage, &mtrCmds)
@@ -228,8 +232,8 @@ int main(void)
 
 	 else
 	 {
-		/* Disarm Quad-copter (Shuts Off Motors) */
-		disarm();
+		/* Disarm ESC (Shuts Off Motors) */
+		esc_disarm();
 
 		/* Signal Waiting Status with LED */
 		led_status(WAITING);
