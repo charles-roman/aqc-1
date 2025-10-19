@@ -11,13 +11,13 @@
  * @brief  computes and returns desired timer clock reference frequency
  *
  * @param  htim       pointer to HAL timer handle
- * @retval freq (hz)
+ * @retval freq (hz); 0 if invalid
  */
 uint32_t Get_TIMxClkRefFreqHz(TIM_HandleTypeDef *htim) {
-	uint32_t APB_PCLK_FREQ_HZ, APB_TIMCLK_FREQ_HZ, TIMx_ClkRefFreq;
+	uint32_t APB_PCLK_FREQ_HZ, APB_TIMCLK_FREQ_HZ, PSC, TIMx_ClkRefFreq;
 
 	if (htim == NULL)
-		return 0; // Setup_Error_Handler();
+		return 0; // Error
 
 	if (htim->Instance == TIM8) {
 		/* Get APB2 Clock Freq */
@@ -26,9 +26,6 @@ uint32_t Get_TIMxClkRefFreqHz(TIM_HandleTypeDef *htim) {
 		/* Get APB2 Timer Clock Freq */
 		APB_TIMCLK_FREQ_HZ = (RCC->CFGR & RCC_CFGR_PPRE2_Msk) != RCC_CFGR_PPRE2_DIV1 ?
 		    				  APB_PCLK_FREQ_HZ * 2 : APB_PCLK_FREQ_HZ; // doubled if PSC > 1
-
-		/* Compute Timer Clock Reference Freq */
-		TIMx_ClkRefFreq = APB_TIMCLK_FREQ_HZ / (htim->Init.Prescaler + 1);
 
 	} else if ((htim->Instance == TIM2) ||
 			   (htim->Instance == TIM3) ||
@@ -41,13 +38,20 @@ uint32_t Get_TIMxClkRefFreqHz(TIM_HandleTypeDef *htim) {
 	    APB_TIMCLK_FREQ_HZ = (RCC->CFGR & RCC_CFGR_PPRE1_Msk) != RCC_CFGR_PPRE1_DIV1 ?
 	    					  APB_PCLK_FREQ_HZ * 2 : APB_PCLK_FREQ_HZ; // doubled if PSC > 1
 
-	    /* Compute Timer Clock Reference Freq */
-	    TIMx_ClkRefFreq = APB_TIMCLK_FREQ_HZ / (htim->Init.Prescaler + 1);
-
 	} else {
-		return 0; // Setup_Error_Handler();
+		return 0; // Error
 
 	}
+
+	/* Get Pre-scaler */
+	PSC = htim->Init.Prescaler + 1;
+
+	/* Error Checks */
+	if ((APB_TIMCLK_FREQ_HZ == 0) || (PSC > APB_TIMCLK_FREQ_HZ))
+		return 0; // Error
+
+	/* Compute Timer Clock Reference Freq */
+	TIMx_ClkRefFreq = APB_TIMCLK_FREQ_HZ / PSC;
 
 	return TIMx_ClkRefFreq;
 }
