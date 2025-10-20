@@ -86,3 +86,7 @@ static inline int signumf(float val) {
 static inline float mapf(float val, float in_min, float in_max, float out_min, float out_max) {
 	return (val - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
+
+static inline bool all_equalu32(uint32_t a, uint32_t b, uint32_t c, uint32_t d) {
+	return (a == b) && (b == c) && (c == d);
+}
