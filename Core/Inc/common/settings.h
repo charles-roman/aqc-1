@@ -45,11 +45,37 @@
 #define CONFIG_YAW_CMD_LIM						150.0f
 #define CONFIG_DERIVATIVE_LPF_CUTOFF_FREQ_RPS	2 * PI * 75.0f	// (NOTE: Might want to break this out into individual cutoff frequencies for separate controllers)
 
-/* ESC PROTOCOL CONFIG SETTINGS-----------------------------------------------*/
+/* SENSOR CONFIG SETTINGS----------------------------------------------------------
+|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-----------------------------------------------------------------------------------*/
+// IMU------------------------------------------------------------------------
+#define CONFIG_GYRO_LPF_CUTOFF_FREQ_RPS 		2 * PI * 500.0f
+
+/* PROTOCOL CONFIG SETTINGS--------------------------------------------------------
+|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-----------------------------------------------------------------------------------*/
+// PWM------------------------------------------------------------------------
+#define CONFIG_PWM_PULSE_MIN_US 				988.0f
+#define CONFIG_PWM_PULSE_MAX_US 				2012.0f
+#define CONFIG_PWM_PULSE_PROTO_MIN_US			1000.0f
+#define CONFIG_PWM_PULSE_PROTO_MAX_US			2000.0f
+#define CONFIG_PWM_PULSE_VALID_MIN_US			950.0f
+#define CONFIG_PWM_PULSE_VALID_MAX_US			2050.0f
+
+/* RX CONFIG SETTINGS--------------------------------------------------------------
+|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-----------------------------------------------------------------------------------*/
+// PROTOCOL-------------------------------------------------------------------
+#define RX_PWM_PROTOCOL_ID						0U
+#define CONFIG_RX_PROTOCOL						RX_PWM_PROTOCOL_ID
+
+/* ESC CONFIG SETTINGS-------------------------------------------------------------
+|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+-----------------------------------------------------------------------------------*/
+// PROTOCOL-------------------------------------------------------------------
 #define ESC_PWM_PROTOCOL_ID						0U
 #define CONFIG_ESC_PROTOCOL						ESC_PWM_PROTOCOL_ID
-
-/* MOTOR COMMAND CONFIG SETTINGS----------------------------------------------*/
+// MOTOR COMMANDS-------------------------------------------------------------
 #define CONFIG_MTR_CMD_IDLE_PCT					18.0f
 #define CONFIG_MTR_CMD_LIFTOFF_PCT				24.0f
 #define CONFIG_MTR_CMD_LIMIT_PCT				100.0f // Max is 100% (this would unlock full motor potential)
