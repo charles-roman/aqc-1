@@ -289,4 +289,19 @@ void DMA2_Stream6_IRQHandler(void)
 
 /* USER CODE BEGIN 1 */
 
+/**
+  * @brief This function handles EXTI2 global interrupt.
+  */
+void EXTI2_IRQHandler(void)
+{
+    HAL_GPIO_EXTI_IRQHandler(ARM_Pin);
+}
+
+/**
+  * @brief This function handles EXTI3 global interrupt.
+  */
+void EXTI3_IRQHandler(void)
+{
+    HAL_GPIO_EXTI_IRQHandler(MODE_Pin);
+}
 /* USER CODE END 1 */
