@@ -10,29 +10,38 @@
 /* Includes ------------------------------------------------------------------*/
 #include <stdbool.h>
 #include <stdint.h>
-#include "stm32f4xx_hal.h"
 
 /* Exported types ------------------------------------------------------------*/
-typedef struct rc_requests {
-	float roll;
-	float pitch;
-	float yaw;
-	float throttle;
-} rc_reqs_t;
+typedef enum {
+    RX_OK			= 0x00U,
+    RX_ERROR_WARN	= 0x01U,
+	RX_ERROR_FATAL	= 0x02U
+} rx_status_t;
 
 typedef struct {
-    void (*init)(void);
-    void (*start)(void);
-    void (*stop)(void);
-    void (*is_armed)(void);
-    void (*get_rc_requests)(mtr_cmds_t *);
-} esc_protocol_interface_t;
+	rx_status_t (*init)(void);
+	rx_status_t (*deinit)(void);
+    rx_status_t (*start)(void);
+    rx_status_t (*stop)(void);
+    rx_status_t (*get_channel)(uint8_t, uint32_t*);
+    // uint32_t (*get_channel_count)(void);
+    // bool (*signal_valid)(void);
+    // bool (*failsafe_active)(void);
+} rx_protocol_interface_t;
 
 /* Exported functions prototypes ---------------------------------------------*/
-void rx_init(void);
+rx_status_t rx_init(void);
 
-void rx_deinit(void);
+rx_status_t rx_deinit(void);
 
-bool is_armed(GPIO_TypeDef* ARM_GPIO_PORT, uint16_t ARM_GPIO_PIN);
+rx_status_t rx_start(void);
 
-void get_rc_requests(rc_reqs_t *req);
+rx_status_t rx_stop(void);
+
+rx_status_t rx_get_channel(uint8_t ch, uint32_t *val);
+
+// uint32_t rx_get_channel_count(void);
+
+// bool rx_signal_valid(void);
+
+// bool rx_failsafe_active(void);

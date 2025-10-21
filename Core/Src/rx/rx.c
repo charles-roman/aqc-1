@@ -7,53 +7,107 @@
 
 #include "rx/rx.h"
 #include "rx/protocols/pwm_rx.h"
-
-void rx_init(void) {
-
-}
+#include "common/settings.h"
 
 /**
-  * @brief determines if quad is currently armed
-  *
-  * @param None
-  * @retval ret		logical value (1 or 0)
+  * @brief  Rx Protocol Setting
   */
-bool is_armed(GPIO_TypeDef* ARM_GPIO_PORT, uint16_t ARM_GPIO_PIN) {
-	bool ret;
-
-	/* Determine if arm switch (SE) is active */
-	ret = (HAL_GPIO_ReadPin(ARM_GPIO_PORT, ARM_GPIO_PIN) == GPIO_PIN_SET);
-
-	return ret;
-}
+#define RX_PROTOCOL	CONFIG_RX_PROTOCOL
 
 /**
-  * @brief init rx communication (based on protocol)
-  *
-  * @param  None
-  * @retval None
+  * @brief  rx driver pointer for protocol interface
   */
-void init_rx_comm_protocol(void) {
-	init_ic_timclk_ref_props();
-	init_pwm_pulse_handles();
+static const rx_protocol_interface_t *rx_driver = NULL;
+
+/**
+  * @brief helper function to validate rx_driver initialization
+  *
+  * @param  driver	pointer to rx driver
+  * @retval boolean
+  */
+static bool valid_rx_driver(rx_protocol_interface_t *driver) {
+	return (driver &&
+			driver->init &&
+		    driver->deinit &&
+			driver->start &&
+			driver->stop &&
+			driver->get_channel);
 }
 
 /**
-  * @brief start rx communication (based on protocol)
+  * @brief rx API call to init rx protocol driver interface
   *
   * @param  None
-  * @retval None
+  * @retval rx status
   */
-void start_rx_comm_capture(void) {
-	start_pwm_input_capture();
+rx_status_t rx_init(void) {
+	/* NOTE: use pre-processor conditionals based
+	* on configured protocol to initialize rx_driver */
+	#if RX_PROTOCOL == RX_PWM_PROTOCOL_ID
+	rx_driver = &pwm_rx_driver;
+	#else
+	return RX_ERROR_FATAL;
+	#endif
+
+	if (!valid_rx_driver(rx_driver))
+		return RX_ERROR_FATAL;
+
+	return rx_driver->init();
 }
 
 /**
-  * @brief update user request (based on protocol)
+  * @brief rx API call to deinit rx protocol driver interface
   *
-  * @param  st	pointer to system state handle
-  * @retval None
+  * @param  None
+  * @retval rx status
   */
-void get_rc_requests(rc_reqs_t *req) {
-	get_rc_requests_over_pwm(req);
+rx_status_t rx_deinit(void) {
+	if (!rx_driver)
+		return RX_ERROR_WARN;
+
+	rx_driver->deinit();
+	rx_driver = NULL;
+
+	return RX_OK;
+}
+
+/**
+  * @brief rx API call to start comms
+  *
+  * @param  None
+  * @retval rx status
+  */
+rx_status_t rx_start(void) {
+	if (!rx_driver)
+		return RX_ERROR_FATAL;
+
+	return rx_driver->start();
+}
+
+/**
+  * @brief rx API call to stop comms
+  *
+  * @param  None
+  * @retval rx status
+  */
+rx_status_t rx_stop(void) {
+	if (!rx_driver)
+		return RX_ERROR_FATAL;
+
+	return rx_driver->stop();
+}
+
+/**
+  * @brief rx API call to get channel value
+  *
+  * @param  ch		channel to get value from
+  * @param	val		buffer value to store result in
+  *
+  * @retval rx status
+  */
+rx_status_t get_channel(uint8_t ch, uint32_t *val) {
+	if (!rx_driver)
+		return RX_ERROR_FATAL;
+
+	return rx_driver->get_channel(ch, val);
 }
