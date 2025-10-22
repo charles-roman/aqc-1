@@ -27,26 +27,26 @@
 /**
   * @brief  Rx Channel -> Timer Aliases
   */
-#define RX_CH1_IC_TIMER					TIM3
-#define RX_CH2_IC_TIMER					TIM3
-#define RX_CH3_IC_TIMER					TIM2
-#define RX_CH4_IC_TIMER					TIM2
+#define RX_CH1_IC_TIM					TIM3
+#define RX_CH2_IC_TIM					TIM3
+#define RX_CH3_IC_TIM					TIM2
+#define RX_CH4_IC_TIM					TIM2
 
 /**
   * @brief  Rx Channel -> Timer Channel Aliases
   */
-#define RX_CH1_IC_TIMER_CHANNEL			TIM_CHANNEL_1
-#define RX_CH2_IC_TIMER_CHANNEL			TIM_CHANNEL_2
-#define RX_CH3_IC_TIMER_CHANNEL			TIM_CHANNEL_3
-#define RX_CH4_IC_TIMER_CHANNEL			TIM_CHANNEL_4
+#define RX_CH1_IC_TIM_CHANNEL			TIM_CHANNEL_1
+#define RX_CH2_IC_TIM_CHANNEL			TIM_CHANNEL_2
+#define RX_CH3_IC_TIM_CHANNEL			TIM_CHANNEL_3
+#define RX_CH4_IC_TIM_CHANNEL			TIM_CHANNEL_4
 
 /**
   * @brief  Rx Channel -> Timer Active Channel Aliases
   */
-#define RX_CH1_IC_TIMER_ACTIVE_CHANNEL	HAL_TIM_ACTIVE_CHANNEL_1
-#define RX_CH2_IC_TIMER_ACTIVE_CHANNEL	HAL_TIM_ACTIVE_CHANNEL_2
-#define RX_CH3_IC_TIMER_ACTIVE_CHANNEL	HAL_TIM_ACTIVE_CHANNEL_3
-#define RX_CH4_IC_TIMER_ACTIVE_CHANNEL	HAL_TIM_ACTIVE_CHANNEL_4
+#define RX_CH1_IC_TIM_ACTIVE_CHANNEL	HAL_TIM_ACTIVE_CHANNEL_1
+#define RX_CH2_IC_TIM_ACTIVE_CHANNEL	HAL_TIM_ACTIVE_CHANNEL_2
+#define RX_CH3_IC_TIM_ACTIVE_CHANNEL	HAL_TIM_ACTIVE_CHANNEL_3
+#define RX_CH4_IC_TIM_ACTIVE_CHANNEL	HAL_TIM_ACTIVE_CHANNEL_4
 
 /**
   * @brief  Rx Channel -> GPIO Aliases
@@ -110,17 +110,17 @@ static volatile level_t rx_ch6_level = SIGNAL_LOW;
   * @brief  Rx Channel IC Timer Handle Pointers
   * 		NOTE: Adjust based on Input Capture Timer Config(s)!
   */
-static const TIM_HandleTypeDef* phtim_rx_ch1;
-static const TIM_HandleTypeDef* phtim_rx_ch2;
-static const TIM_HandleTypeDef* phtim_rx_ch3;
-static const TIM_HandleTypeDef* phtim_rx_ch4;
+static const TIM_HandleTypeDef* phtim_rx_ch1 = NULL;
+static const TIM_HandleTypeDef* phtim_rx_ch2 = NULL;
+static const TIM_HandleTypeDef* phtim_rx_ch3 = NULL;
+static const TIM_HandleTypeDef* phtim_rx_ch4 = NULL;
 
 /**
   * @brief  Input Capture Timer Clock Reference Properties
   */
 static uint32_t IC_TIMx_REF_ARR;
-static uint32_t IC_TIMx_ClkRefFreqMHz; // NOTE: Keep at 1MHz to avoid unnecessary division calcs \
-										  Otherwise this should be a FLOAT!
+static uint32_t IC_TIMxClkRefFreqMHz; // NOTE: Keep at 1MHz to avoid unnecessary division calcs \
+										  Otherwise this should be a FLOAT to avoid precision loss!
 /**
   * @brief  ISR Callback Error Flag
   */
@@ -220,17 +220,17 @@ static void update_pulse_edge(TIM_HandleTypeDef *htim, uint32_t channel, pulse_t
   */
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 	/* Determine where event occurred */
-	if (htim->Instance == RX_CH1_IC_TIMER && htim->Channel == RX_CH1_IC_TIMER_ACTIVE_CHANNEL) {
-		update_pulse_edge(htim, RX_CH1_IC_TIMER_CHANNEL, &rx_ch1_pulse);
+	if (htim->Instance == RX_CH1_IC_TIM && htim->Channel == RX_CH1_IC_TIM_ACTIVE_CHANNEL) {
+		update_pulse_edge(htim, RX_CH1_IC_TIM_CHANNEL, &rx_ch1_pulse);
 
-	} else if (htim->Instance == RX_CH2_IC_TIMER && htim->Channel == RX_CH2_IC_TIMER_ACTIVE_CHANNEL) {
-		update_pulse_edge(htim, RX_CH2_IC_TIMER_CHANNEL, &rx_ch2_pulse);
+	} else if (htim->Instance == RX_CH2_IC_TIM && htim->Channel == RX_CH2_IC_TIM_ACTIVE_CHANNEL) {
+		update_pulse_edge(htim, RX_CH2_IC_TIM_CHANNEL, &rx_ch2_pulse);
 
-	} else if (htim->Instance == RX_CH3_IC_TIMER && htim->Channel == RX_CH3_IC_TIMER_ACTIVE_CHANNEL) {
-		update_pulse_edge(htim, RX_CH3_IC_TIMER_CHANNEL, &rx_ch3_pulse);
+	} else if (htim->Instance == RX_CH3_IC_TIM && htim->Channel == RX_CH3_IC_TIM_ACTIVE_CHANNEL) {
+		update_pulse_edge(htim, RX_CH3_IC_TIM_CHANNEL, &rx_ch3_pulse);
 
-	} else if (htim->Instance == RX_CH4_IC_TIMER && htim->Channel == RX_CH4_IC_TIMER_ACTIVE_CHANNEL) {
-		update_pulse_edge(htim, RX_CH4_IC_TIMER_CHANNEL, &rx_ch4_pulse);
+	} else if (htim->Instance == RX_CH4_IC_TIM && htim->Channel == RX_CH4_IC_TIM_ACTIVE_CHANNEL) {
+		update_pulse_edge(htim, RX_CH4_IC_TIM_CHANNEL, &rx_ch4_pulse);
 
 	} else {
 		/* Unexpected input capture on unsupported TIMx/Channel combo */
@@ -285,7 +285,7 @@ static void get_pulse_width(pulse_t *pul, uint32_t *val) {
 	ic_diff = (pul->ic_val_f > pul->ic_val_r) ? pul->ic_val_f - pul->ic_val_r
 											  : (IC_TIMx_REF_ARR - pul->ic_val_r) + pul->ic_val_f; // overflow protection
 	/* Calculate Pulse Width */
-	pulsewidth_us = ic_diff / IC_TIMx_ClkRefFreqMHz; // NOTE: this division loses precision unless IC_TIMx_ClkRefFreqMHz = 1 \
+	pulsewidth_us = ic_diff / IC_TIMxClkRefFreqMHz; // NOTE: this division loses precision unless IC_TIMxClkRefFreqMHz = 1 \
 															  or one operand is converted to a floating-point number
 	/* Store in buffer */
 	*val = pulsewidth_us;
@@ -320,10 +320,10 @@ static bool valid_ic_timer_config(void) {
 	RX_CH3_IC_TIMClkRefFreqHz = Get_TIMxClkRefFreqHz(phtim_rx_ch3);
 	RX_CH4_IC_TIMClkRefFreqHz = Get_TIMxClkRefFreqHz(phtim_rx_ch4);
 
-	if (!all_equalu32(RX_CH1_IC_TIMClkRefFreqHz, \
-				   	  RX_CH2_IC_TIMClkRefFreqHz, \
-					  RX_CH3_IC_TIMClkRefFreqHz, \
-					  RX_CH4_IC_TIMClkRefFreqHz)) {
+	if (!all_equal_u32(RX_CH1_IC_TIMClkRefFreqHz, \
+				   	   RX_CH2_IC_TIMClkRefFreqHz, \
+					   RX_CH3_IC_TIMClkRefFreqHz, \
+					   RX_CH4_IC_TIMClkRefFreqHz)) {
 		return false;
 	}
 
@@ -333,17 +333,19 @@ static bool valid_ic_timer_config(void) {
 	RX_CH3_IC_TIM_CLK_ARR = phtim_rx_ch3->Init.Period;
 	RX_CH4_IC_TIM_CLK_ARR = phtim_rx_ch4->Init.Period;
 
-	if (!all_equalu32(RX_CH1_IC_TIM_CLK_ARR, \
-				   	  RX_CH2_IC_TIM_CLK_ARR, \
-					  RX_CH3_IC_TIM_CLK_ARR, \
-					  RX_CH4_IC_TIM_CLK_ARR)) {
+	if (!all_equal_u32(RX_CH1_IC_TIM_CLK_ARR, \
+				   	   RX_CH2_IC_TIM_CLK_ARR, \
+					   RX_CH3_IC_TIM_CLK_ARR, \
+					   RX_CH4_IC_TIM_CLK_ARR)) {
 		return false;
 	}
 
 	// NOTE: Might also want to validate polarity, mode, etc.
 
+	/* Validate reload period */
 	COUNTER_RELOAD_PERIOD_SEC = (float) RX_CH1_IC_TIM_CLK_ARR / RX_CH1_IC_TIMClkRefFreqHz; // use any channel
-	if (COUNTER_RELOAD_PERIOD_SEC < USEC_TO_SEC(PWM_PULSE_PROTO_MIN_US)) {
+
+	if (SEC_TO_USEC(COUNTER_RELOAD_PERIOD_SEC) < (float) PWM_PULSE_VALID_MAX_US) {
 		return false;
 	}
 
@@ -351,24 +353,36 @@ static bool valid_ic_timer_config(void) {
 }
 
 /**
+  * @brief helper function to reset pulse_t type to safe state
+  *
+  * @retval None
+  */
+static void reset_pulse(pulse_t *pul) {
+	pul->ic_val_f = 0U;
+	pul->ic_val_r = 0U;
+	pul->is_rising = true;
+	pul->is_updated = false;
+}
+
+/**
   * @brief init pwm_rx protocol config properties
   *
   * @retval None
   */
-pwm_rx_status_t pwm_rx_init(void) {
-	phtim_rx_ch1 = Get_Rx_Channel_IC_TIM_Handle(RX_CH1_IC_TIMER);
+static pwm_rx_status_t pwm_rx_init(void) {
+	phtim_rx_ch1 = Get_Rx_Channel_IC_TIM_Handle(RX_CH1_IC_TIM);
 	if (phtim_rx_ch1 == NULL)
 		return PWM_RX_ERROR_FATAL;
 
-	phtim_rx_ch2 = Get_Rx_Channel_IC_TIM_Handle(RX_CH2_IC_TIMER);
+	phtim_rx_ch2 = Get_Rx_Channel_IC_TIM_Handle(RX_CH2_IC_TIM);
 	if (phtim_rx_ch2 == NULL)
 		return PWM_RX_ERROR_FATAL;
 
-	phtim_rx_ch3 = Get_Rx_Channel_IC_TIM_Handle(RX_CH3_IC_TIMER);
+	phtim_rx_ch3 = Get_Rx_Channel_IC_TIM_Handle(RX_CH3_IC_TIM);
 	if (phtim_rx_ch3 == NULL)
 		return PWM_RX_ERROR_FATAL;
 
-	phtim_rx_ch4 = Get_Rx_Channel_IC_TIM_Handle(RX_CH4_IC_TIMER);
+	phtim_rx_ch4 = Get_Rx_Channel_IC_TIM_Handle(RX_CH4_IC_TIM);
 	if (phtim_rx_ch4 == NULL)
 		return PWM_RX_ERROR_FATAL;
 
@@ -377,11 +391,10 @@ pwm_rx_status_t pwm_rx_init(void) {
 		return PWM_RX_ERROR_FATAL;
 
 	/* Init IC timer config variable(s) */
-	uint32_t TempClkFreqHz = Get_TIMxClkRefFreqHz(phtim_rx_ch1); // can use any timer handle after validating their config
-	if (TempClkFreqHz != MHZ_TO_HZ(1))	// restrict to 1MHz config
+	IC_TIMxClkRefFreqMHz = Get_TIMxClkRefFreqMHz(phtim_rx_ch1); // can use any timer handle after validating their config
+	if (IC_TIMxClkRefFreqMHz != 1)	// restrict to 1MHz config
 		return PWM_RX_ERROR_FATAL;
 
-	IC_TIMx_ClkRefFreqMHz = HZ_TO_MHZ(TempClkFreqHz);
 	IC_TIMx_REF_ARR = phtim_rx_ch1->Init.Period; // can use any timer handle after validating their config
 
 	return PWM_RX_OK;
@@ -392,15 +405,23 @@ pwm_rx_status_t pwm_rx_init(void) {
   *
   * @retval None
   */
-pwm_rx_status_t pwm_rx_deinit(void) {
+static pwm_rx_status_t pwm_rx_deinit(void) {
 	/* Reset cached IC timer handles */
 	phtim_rx_ch1 = NULL;
 	phtim_rx_ch2 = NULL;
 	phtim_rx_ch3 = NULL;
 	phtim_rx_ch4 = NULL;
 	/* Reset cached IC timer config variables */
-	IC_TIMx_ClkRefFreqMHz = 0;
+	IC_TIMxClkRefFreqMHz = 0;
 	IC_TIMx_REF_ARR = 0;
+	/* Reset rx_chx_pulses to safe state */
+	reset_pulse(&rx_ch1_pulse);
+	reset_pulse(&rx_ch2_pulse);
+	reset_pulse(&rx_ch3_pulse);
+	reset_pulse(&rx_ch4_pulse);
+	/* Reset rx_chx_levels to safe state */
+	rx_ch5_level = SIGNAL_LOW;
+	rx_ch6_level = SIGNAL_LOW;
 
 	return PWM_RX_OK;
 }
@@ -410,18 +431,18 @@ pwm_rx_status_t pwm_rx_deinit(void) {
   *
   * @retval rx status
   */
-pwm_rx_status_t pwm_rx_start(void) {
+static pwm_rx_status_t pwm_rx_start(void) {
 	/* Start Input Capture Interrupts */
-	if (IC_Start_Channel_IT(phtim_rx_ch1, RX_CH1_IC_TIMER_CHANNEL) != HAL_OK)
+	if (IC_Start_Channel_IT(phtim_rx_ch1, RX_CH1_IC_TIM_CHANNEL) != HAL_OK)
 		return PWM_RX_ERROR_FATAL;
 
-	if (IC_Start_Channel_IT(phtim_rx_ch2, RX_CH2_IC_TIMER_CHANNEL) != HAL_OK)
+	if (IC_Start_Channel_IT(phtim_rx_ch2, RX_CH2_IC_TIM_CHANNEL) != HAL_OK)
 		return PWM_RX_ERROR_FATAL;
 
-	if (IC_Start_Channel_IT(phtim_rx_ch3, RX_CH3_IC_TIMER_CHANNEL) != HAL_OK)
+	if (IC_Start_Channel_IT(phtim_rx_ch3, RX_CH3_IC_TIM_CHANNEL) != HAL_OK)
 		return PWM_RX_ERROR_FATAL;
 
-	if (IC_Start_Channel_IT(phtim_rx_ch4, RX_CH4_IC_TIMER_CHANNEL) != HAL_OK)
+	if (IC_Start_Channel_IT(phtim_rx_ch4, RX_CH4_IC_TIM_CHANNEL) != HAL_OK)
 		return PWM_RX_ERROR_FATAL;
 
 	return PWM_RX_OK;
@@ -432,18 +453,18 @@ pwm_rx_status_t pwm_rx_start(void) {
   *
   * @retval rx status
   */
-pwm_rx_status_t pwm_rx_stop(void) {
+static pwm_rx_status_t pwm_rx_stop(void) {
 	/* Stop Input Capture Interrupts */
-	if (IC_Stop_Channel_IT(phtim_rx_ch1, RX_CH1_IC_TIMER_CHANNEL) != HAL_OK)
+	if (IC_Stop_Channel_IT(phtim_rx_ch1, RX_CH1_IC_TIM_CHANNEL) != HAL_OK)
 		return PWM_RX_ERROR_FATAL;
 
-	if (IC_Stop_Channel_IT(phtim_rx_ch2, RX_CH2_IC_TIMER_CHANNEL) != HAL_OK)
+	if (IC_Stop_Channel_IT(phtim_rx_ch2, RX_CH2_IC_TIM_CHANNEL) != HAL_OK)
 		return PWM_RX_ERROR_FATAL;
 
-	if (IC_Stop_Channel_IT(phtim_rx_ch3, RX_CH3_IC_TIMER_CHANNEL) != HAL_OK)
+	if (IC_Stop_Channel_IT(phtim_rx_ch3, RX_CH3_IC_TIM_CHANNEL) != HAL_OK)
 		return PWM_RX_ERROR_FATAL;
 
-	if (IC_Stop_Channel_IT(phtim_rx_ch4, RX_CH4_IC_TIMER_CHANNEL) != HAL_OK)
+	if (IC_Stop_Channel_IT(phtim_rx_ch4, RX_CH4_IC_TIM_CHANNEL) != HAL_OK)
 		return PWM_RX_ERROR_FATAL;
 
 	return PWM_RX_OK;
@@ -457,7 +478,7 @@ pwm_rx_status_t pwm_rx_stop(void) {
   *
   * @retval rx status
   */
-pwm_rx_status_t pwm_rx_get_channel(uint8_t ch, uint32_t *val) {
+static pwm_rx_status_t pwm_rx_get_channel(const uint8_t ch, uint32_t *val) {
 	pwm_rx_status_t status = PWM_RX_OK;
 
 	switch (ch) {
