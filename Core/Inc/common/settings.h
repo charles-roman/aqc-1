@@ -55,12 +55,12 @@
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 -----------------------------------------------------------------------------------*/
 // PWM------------------------------------------------------------------------
-#define CONFIG_PWM_PULSE_MIN_US 				988.0f
-#define CONFIG_PWM_PULSE_MAX_US 				2012.0f
-#define CONFIG_PWM_PULSE_PROTO_MIN_US			1000.0f
-#define CONFIG_PWM_PULSE_PROTO_MAX_US			2000.0f
-#define CONFIG_PWM_PULSE_VALID_MIN_US			950.0f
-#define CONFIG_PWM_PULSE_VALID_MAX_US			2050.0f
+#define CONFIG_PWM_PULSE_MIN_US 				988U
+#define CONFIG_PWM_PULSE_MAX_US 				2012U
+#define CONFIG_PWM_PULSE_PROTO_MIN_US			1000U
+#define CONFIG_PWM_PULSE_PROTO_MAX_US			2000U
+#define CONFIG_PWM_PULSE_VALID_MIN_US			950U
+#define CONFIG_PWM_PULSE_VALID_MAX_US			2050U
 
 /* RX CONFIG SETTINGS--------------------------------------------------------------
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
