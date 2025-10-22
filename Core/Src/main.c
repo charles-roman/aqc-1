@@ -107,6 +107,7 @@ int main(void)
   /* USER CODE BEGIN 1 */
   /* Declare or Initialize Private Variables */
   uint8_t ready;
+  rx_status_t rx_status;
   esc_status_t esc_status;
   static mtr_cmds_t mtrCmds;
   static sensorPackage sensPackage;
@@ -155,9 +156,11 @@ int main(void)
   esc_status = esc_start();
   // CHECK(esc_status);
 
-  /* Initialize and Start Rx Comms */
-  init_rx_comm_protocol();
-  start_rx_comm_capture();
+  /* Initialize Rx Interface and Start Comms */
+  rx_status = rx_init();
+  // CHECK(rx_status);
+  rx_status = rx_start();
+  // CHECK(rx_status);
   delay(20); // wait rx boot time
 
   /* Start Timer */
@@ -751,8 +754,14 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LED_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB12 ARM_Pin */
-  GPIO_InitStruct.Pin = GPIO_PIN_12|ARM_Pin;
+  /*Configure GPIO pins : ARM_Pin MODE_Pin */
+  GPIO_InitStruct.Pin = ARM_Pin|MODE_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PB12 */
+  GPIO_InitStruct.Pin = GPIO_PIN_12;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
