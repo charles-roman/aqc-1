@@ -23,7 +23,7 @@ typedef struct {
 	rx_status_t (*deinit)(void);
     rx_status_t (*start)(void);
     rx_status_t (*stop)(void);
-    rx_status_t (*get_channel)(uint8_t, uint32_t*);
+    rx_status_t (*get_channel)(const uint8_t, uint32_t*);
     // uint32_t (*get_channel_count)(void);
     // bool (*signal_valid)(void);
     // bool (*failsafe_active)(void);
@@ -38,7 +38,7 @@ rx_status_t rx_start(void);
 
 rx_status_t rx_stop(void);
 
-rx_status_t rx_get_channel(uint8_t ch, uint32_t *val);
+rx_status_t rx_get_channel(const uint8_t ch, uint32_t *val);
 
 // uint32_t rx_get_channel_count(void);
 

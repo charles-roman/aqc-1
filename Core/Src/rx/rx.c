@@ -105,7 +105,7 @@ rx_status_t rx_stop(void) {
   *
   * @retval rx status
   */
-rx_status_t get_channel(uint8_t ch, uint32_t *val) {
+rx_status_t rx_get_channel(const uint8_t ch, uint32_t *val) {
 	if (!rx_driver)
 		return RX_ERROR_FATAL;
 
