@@ -62,7 +62,21 @@ static inline float constrainf(float val, float min, float max) {
 	}
 }
 
+static inline float constrain_u32(uint32_t val, uint32_t min, uint32_t max) {
+	if (val < min) {
+        return min;
+	} else if (val > max) {
+		return max;
+	} else {
+        return val;
+	}
+}
+
 static inline bool inrangef(float val, float min, float max) {
+	return (val >= min) && (val <= max);
+}
+
+static inline bool inrange_u32(uint32_t val, uint32_t min, uint32_t max) {
 	return (val >= min) && (val <= max);
 }
 
@@ -87,6 +101,6 @@ static inline float mapf(float val, float in_min, float in_max, float out_min, f
 	return (val - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
-static inline bool all_equalu32(uint32_t a, uint32_t b, uint32_t c, uint32_t d) {
+static inline bool all_equal_u32(uint32_t a, uint32_t b, uint32_t c, uint32_t d) {
 	return (a == b) && (b == c) && (c == d);
 }
