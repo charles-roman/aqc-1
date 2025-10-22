@@ -34,6 +34,7 @@ static bool valid_esc_driver(esc_protocol_interface_t *driver) {
 			driver->stop &&
 			driver->arm &&
 			driver->disarm &&
+			driver->is_armed &&
 			driver->set_motor_commands);
 }
 
@@ -47,7 +48,7 @@ esc_status_t esc_init(void) {
 	/* Use pre-processor conditionals based on configured protocol to initialize esc_driver.
 	 * NOTE: hot-swaps would require ESC_PROTOCOL to be a modifiable variable */
 	#if ESC_PROTOCOL == ESC_PWM_PROTOCOL_ID
-	esc_driver = &pwm_driver;
+	esc_driver = &pwm_esc_driver;
 	#else
 	return ESC_ERROR_FATAL;
 	#endif
@@ -107,7 +108,10 @@ esc_status_t esc_stop(void) {
   * @retval None
   */
 void esc_arm(void) {
-	esc_driver->arm();
+	if (!esc_driver)
+		return ESC_ERROR_FATAL;
+
+	return esc_driver->arm();
 }
 
 /**
@@ -117,7 +121,24 @@ void esc_arm(void) {
   * @retval None
   */
 void esc_disarm(void) {
-	esc_driver->disarm();
+	if (!esc_driver)
+		return ESC_ERROR_FATAL;
+
+	return esc_driver->disarm();
+}
+
+
+/**
+  * @brief esc API call to check whether esc is armed
+  *
+  * @param  None
+  * @retval None
+  */
+bool esc_is_armed(void) {
+	if (!esc_driver)
+		return ESC_ERROR_FATAL;
+
+	return esc_driver->is_armed();
 }
 
 /**
@@ -127,7 +148,7 @@ void esc_disarm(void) {
   *
   * @retval esc status
   */
-esc_status_t esc_set_motor_commands(mtr_cmds_t *cmd) {
+esc_status_t esc_set_motor_commands(const mtr_cmds_t *cmd) {
 	/* NOTE: include this check when integrating hot-swaps or other features which may
 	 * call esc_deinit during runtime, otherwise leave lightweight due to call frequency
 	 *

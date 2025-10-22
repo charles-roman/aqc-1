@@ -28,7 +28,8 @@ typedef struct {
 	esc_status_t (*stop)(void);
     void (*arm)(void);
     void (*disarm)(void);
-    esc_status_t (*set_motor_commands)(mtr_cmds_t *);
+    bool (*is_armed)(void);
+    esc_status_t (*set_motor_commands)(const mtr_cmds_t*);
 } esc_protocol_interface_t;
 
 /* Exported function prototypes ----------------------------------------------*/
@@ -44,4 +45,6 @@ void esc_arm(void);
 
 void esc_disarm(void);
 
-esc_status_t esc_set_motor_commands(mtr_cmds_t *cmd);
+bool esc_is_armed(void);
+
+esc_status_t esc_set_motor_commands(const mtr_cmds_t *cmd);
