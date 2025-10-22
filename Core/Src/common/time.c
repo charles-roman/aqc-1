@@ -14,7 +14,7 @@
  * @retval freq (hz); 0 if invalid
  */
 uint32_t Get_TIMxClkRefFreqHz(TIM_HandleTypeDef *htim) {
-	uint32_t APB_PCLK_FREQ_HZ, APB_TIMCLK_FREQ_HZ, PSC, TIMx_ClkRefFreq;
+	uint32_t APB_PCLK_FREQ_HZ, APB_TIMCLK_FREQ_HZ, PSC, TIMx_ClkRefFreqHz;
 
 	if (htim == NULL)
 		return 0; // Error
@@ -51,9 +51,30 @@ uint32_t Get_TIMxClkRefFreqHz(TIM_HandleTypeDef *htim) {
 		return 0; // Error
 
 	/* Compute Timer Clock Reference Freq */
-	TIMx_ClkRefFreq = APB_TIMCLK_FREQ_HZ / PSC;
+	TIMx_ClkRefFreqHz = APB_TIMCLK_FREQ_HZ / PSC;
 
-	return TIMx_ClkRefFreq;
+	return TIMx_ClkRefFreqHz;
+}
+
+/*
+ * @brief  computes and returns desired timer clock reference frequency
+ *
+ * @param  htim       pointer to HAL timer handle
+ * @retval freq (mhz); 0 if unable to be calculated in mhz as an integral type
+ */
+uint32_t Get_TIMxClkRefFreqMHz(TIM_HandleTypeDef *htim) {
+	const uint32_t ONE_MILLION = 1000000U;
+
+	/* Get Timer Clock Reference Freq in Hz */
+	uint32_t TIMx_ClkRefFreqHz = Get_TIMxClkRefFreqHz(htim);
+	if (TIMx_ClkRefFreqHz == 0)
+		return 0;
+
+	/* Check if Divisible by 1 Million */
+	if (TIMx_ClkRefFreqHz % ONE_MILLION != 0)
+		return 0;
+
+	return TIMx_ClkRefFreqHz / ONE_MILLION;
 }
 
 /*

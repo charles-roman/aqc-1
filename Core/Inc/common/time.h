@@ -12,6 +12,8 @@
 /* Exported functions prototypes ---------------------------------------------*/
 uint32_t Get_TIMxClkRefFreqHz(TIM_HandleTypeDef *htim);
 
+uint32_t Get_TIMxClkRefFreqMHz(TIM_HandleTypeDef *htim);
+
 void start_timer(TIM_HandleTypeDef *htim);
 
 void stop_timer(TIM_HandleTypeDef *htim);
