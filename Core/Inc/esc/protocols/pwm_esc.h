@@ -7,7 +7,8 @@
 
 #pragma once
 
+/* Includes ------------------------------------------------------------------*/
 #include "esc/esc.h"
 
 /* External variables --------------------------------------------------------*/
-extern const esc_protocol_interface_t pwm_driver;
+extern const esc_protocol_interface_t pwm_esc_driver;
