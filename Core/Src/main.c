@@ -34,6 +34,7 @@
 #include "common/led.h"
 #include "flight/system.h"
 #include "flight/failsafe.h"
+#include "flight/rc_input.h"
 #include "flight/pid.h"
 #include "flight/mixer.h"
 #include "setup/setup.h"
@@ -109,6 +110,8 @@ int main(void)
   uint8_t ready;
   rx_status_t rx_status;
   esc_status_t esc_status;
+  rc_req_status_t rc_status;
+  static rc_reqs_t rcReqs;
   static mtr_cmds_t mtrCmds;
   static sensorPackage sensPackage;
   static systemState sysState = {{.command_limit = ROLL_CMD_LIM, .gains = ROLL_PID, .clamp = 1},
@@ -163,6 +166,10 @@ int main(void)
   // CHECK(rx_status);
   delay(20); // wait rx boot time
 
+  /* Initialize RC Interface and Start Comms */
+  rc_status = rc_init();
+  // CHECK(rc_status);
+
   /* Start Timer */
   start_timer(&htim6); //general purpose timer
 
@@ -194,14 +201,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
-	 if (armed())
-	 {
-		/* Signal Ready Status with LED */
-		led_status(READY);
-
-		/* Get User Input */
-		get_state_request(&sysState);
+		/* Get Remote Control Input */
+		rc_get_requests(&rcReqs);
 
 		/* Read Sensor Data */
 		read_sensor_data(&sensPackage);
@@ -215,8 +216,25 @@ int main(void)
 		/* Apply Motor Mixing Algorithm & Set Duty Cycles */
 		actuator_set(&sensPackage, &sysState, &mtrCmds);
 
-		/* Set Motor Commands */
-		esc_status = set_motor_commands(&mtrCmds);
+		/* Check if Remote Control is Armed */
+		if (rc_is_armed()) {
+			/* Re-arm ESC (if not already) */
+			if (!esc_is_armed()) {
+				led_status(READY); // Signal Ready Status with LED
+				esc_arm();
+
+			} else {
+				/* Set Motor Commands */
+				esc_status = esc_set_motor_commands(&mtrCmds);
+			}
+
+		} else {
+			/* Disarm ESC (if not already) */
+			if (esc_is_armed())
+				esc_disarm();
+
+			led_status(WAITING); // Signal Waiting Status with LED
+		}
 
 		/* Write to SD Card */
 		//record_data(&sysState, &sensPackage, &mtrCmds)
@@ -229,18 +247,6 @@ int main(void)
 
 //		sprintf((char*)tx_buffer, "roll, pitch, yawrate: %f\t%f\t%f\r\n", sysState.roll.estimate, sysState.pitch.estimate, sysState.yaw.estimate);
 //		CDC_Transmit_FS(tx_buffer, strlen((char const*)tx_buffer));
-
-
-	 }
-
-	 else
-	 {
-		/* Disarm ESC (Shuts Off Motors) */
-		esc_disarm();
-
-		/* Signal Waiting Status with LED */
-		led_status(WAITING);
-	 }
 
     /* USER CODE END WHILE */
 
