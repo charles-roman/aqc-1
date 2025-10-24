@@ -69,12 +69,13 @@ typedef rx_status_t pwm_rx_status_t;
   * @brief  Rx Channel Type
   */
 typedef enum {
-	RX_CH1 = 0x01U,
-	RX_CH2 = 0x02U,
-	RX_CH3 = 0x03U,
-	RX_CH4 = 0x04U,
-	RX_CH5 = 0x05U,
-	RX_CH6 = 0x06U
+	RX_CH_INVALID	= 0x00U,
+	RX_CH1 		  	= 0x01U,
+	RX_CH2 			= 0x02U,
+	RX_CH3 			= 0x03U,
+	RX_CH4 			= 0x04U,
+	RX_CH5 			= 0x05U,
+	RX_CH6 			= 0x06U
 } rx_channel_t;
 
 /**
@@ -91,8 +92,8 @@ typedef struct pulse {
   * @brief  Rx Signal Level Type
   */
 typedef enum {
-	SIGNAL_LOW  = 0U,
-	SIGNAL_HIGH = !SIGNAL_LOW
+	SIGNAL_LOW  = 1U,	// starts at 1 so pwm_rx_get_channel can use 0 as an error value
+	SIGNAL_HIGH = 2U
 } level_t;
 
 /**
@@ -474,44 +475,42 @@ static pwm_rx_status_t pwm_rx_stop(void) {
   * @brief get pwm channel pulse or logical value
   *
   * @param  ch		channel to get value from
-  * @param	val		buffer value to store result in
-  *
-  * @retval rx status
+  * @retval channel value (0 if invalid channel requested)
   */
-static pwm_rx_status_t pwm_rx_get_channel(const uint8_t ch, uint32_t *val) {
-	pwm_rx_status_t status = PWM_RX_OK;
+static uint32_t pwm_rx_get_channel(const uint8_t ch) {
+	uint32_t ret;
 
 	switch (ch) {
 		case RX_CH1:
-			get_pulse_width(&rx_ch1_pulse, val);
+			get_pulse_width(&rx_ch1_pulse, *ret);
 			break;
 
 		case RX_CH2:
-			get_pulse_width(&rx_ch2_pulse, val);
+			get_pulse_width(&rx_ch2_pulse, *ret);
 			break;
 
 		case RX_CH3:
-			get_pulse_width(&rx_ch3_pulse, val);
+			get_pulse_width(&rx_ch3_pulse, *ret);
 			break;
 
 		case RX_CH4:
-			get_pulse_width(&rx_ch4_pulse, val);
+			get_pulse_width(&rx_ch4_pulse, *ret);
 			break;
 
 		case RX_CH5:
-			*val = (uint32_t) rx_ch5_level;
+			ret = (uint32_t) rx_ch5_level;
 			break;
 
 		case RX_CH6:
-			*val = (uint32_t) rx_ch6_level;
+			ret = (uint32_t) rx_ch6_level;
 			break;
 
 		default:
-			status = PWM_RX_ERROR_WARN;
+			ret = (uint32_t) RX_CH_INVALID; // Error, invalid channel requested
 			break;
 	}
 
-	return status;
+	return ret;
 }
 
 const rx_protocol_interface_t pwm_rx_driver = {
