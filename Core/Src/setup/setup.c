@@ -14,7 +14,6 @@
 #include "common/maths.h"
 #include "common/led.h"
 #include "common/time.h"
-#include "../sensors/mag.h"
 
 /**
   * @brief flight ready checks
