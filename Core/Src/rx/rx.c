@@ -101,13 +101,11 @@ rx_status_t rx_stop(void) {
   * @brief rx API call to get channel value
   *
   * @param  ch		channel to get value from
-  * @param	val		buffer value to store result in
-  *
-  * @retval rx status
+  * @retval channel value
   */
-rx_status_t rx_get_channel(const uint8_t ch, uint32_t *val) {
+uint32_t rx_get_channel(const uint8_t ch) {
 	if (!rx_driver)
 		return RX_ERROR_FATAL;
 
-	return rx_driver->get_channel(ch, val);
+	return rx_driver->get_channel(ch);
 }
