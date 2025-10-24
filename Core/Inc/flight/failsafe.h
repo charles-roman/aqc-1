@@ -15,8 +15,6 @@
 #include "system.h"
 #include "sensors/imu/imu.h"
 
-uint8_t throttle_idle(systemState *st);
-
 uint8_t right_side_up(device *imu);
 
 uint8_t attitude_within_boundaries(systemState *st);

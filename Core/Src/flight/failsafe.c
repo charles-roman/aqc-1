@@ -12,23 +12,6 @@
 #include "sensors/imu/imu.h"
 
 /**
-  * @brief determines if throttle is in idle position (or close to it)
-  *
-  * @param st		pointer to systemState struct
-  * @retval ret		logical value (1 or 0)
-  */
-uint8_t throttle_idle(systemState *st)
-{
-	uint8_t ret;
-	get_rc_request(st);
-
-	/* Determine if throttle is within idle tolerance */
-	ret = (st->throttle.request < 5);
-
-	return ret;
-}
-
-/**
   * @brief determines if quadcopter is right side up
   *
   * @param imu		pointer to (imu) device struct
