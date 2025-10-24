@@ -28,4 +28,3 @@ typedef enum {
 #define HTIM4			CONFIGURED
 #define HTIM6			CONFIGURED
 #define HTIM8			CONFIGURED
-
