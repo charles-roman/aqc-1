@@ -16,6 +16,8 @@ extern TIM_HandleTypeDef htim4;
 extern TIM_HandleTypeDef htim6;
 extern TIM_HandleTypeDef htim8;
 
+extern I2C_HandleTypeDef hi2c1;
+
 /* Exported types ------------------------------------------------------------*/
 typedef enum {
 	UNCONFIGURED = 0U,
@@ -28,3 +30,5 @@ typedef enum {
 #define HTIM4			CONFIGURED
 #define HTIM6			CONFIGURED
 #define HTIM8			CONFIGURED
+
+#define HI2C1			CONFIGURED
