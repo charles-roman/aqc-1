@@ -11,6 +11,9 @@
 
 // CAUTION WHEN ADJUSTING!!!
 
+#define	DISABLED	0U
+#define ENABLED		!DISABLED
+
 /* FLIGHT CONFIG SETTINGS----------------------------------------------------------
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 -----------------------------------------------------------------------------------*/
@@ -47,7 +50,17 @@
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 -----------------------------------------------------------------------------------*/
 // IMU------------------------------------------------------------------------
-#define CONFIG_GYRO_LPF_CUTOFF_FREQ_RPS 		2 * PI * 500.0f
+#define LSM6DSOX_DEVICE_ID						0U
+#define CONFIG_IMU_DEVICE						LSM6DSOX_DEVICE_ID
+
+#define IMU_I2C_PROTOCOL_ID						0U
+#define CONFIG_IMU_COMM_PROTOCOL				IMU_I2C_PROTOCOL_ID
+
+#define CONFIG_GY_LPF							DISABLED
+#define CONFIG_GY_LPF_CUTOFF_FREQ_RPS 			2 * PI * 500.0f
+
+#define CONFIG_XL_LPF							DISABLED
+#define CONFIG_XL_LPF_CUTOFF_FREQ_RPS 			2 * PI * 40.0f
 
 /* PROTOCOL CONFIG SETTINGS--------------------------------------------------------
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
