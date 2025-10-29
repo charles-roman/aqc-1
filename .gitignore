@@ -2,5 +2,6 @@
 Debug/
 
 #Ignore user specific files and directories
+.archive/
 .notes/
 *.swp
