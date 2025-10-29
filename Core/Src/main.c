@@ -110,7 +110,10 @@ int main(void)
   uint8_t ready;
   rx_status_t rx_status;
   esc_status_t esc_status;
+  imu_status_t imu_status;
   rc_req_status_t rc_status;
+
+  static imu_6D_t imu;
   static rc_reqs_t rcReqs;
   static mtr_cmds_t mtrCmds;
   static sensorPackage sensPackage;
@@ -150,9 +153,6 @@ int main(void)
   MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
 
-  /* Sensor Setup */
-  sensor_setup(&sensPackage);
-
   /* Initialize ESC and Start Comms*/
   esc_status = esc_init();
   // CHECK(esc_status);
@@ -166,9 +166,13 @@ int main(void)
   // CHECK(rx_status);
   delay(20); // wait rx boot time
 
-  /* Initialize RC Interface and Start Comms */
+  /* Initialize RC Interface */
   rc_status = rc_init();
   // CHECK(rc_status);
+
+  /* Initialize IMU Interface */
+  imu_status = imu_init();
+  // CHECK(imu_status);
 
   /* Start Timer */
   start_timer(&htim6); //general purpose timer
@@ -204,8 +208,8 @@ int main(void)
 		/* Get Remote Control Input */
 		rc_get_requests(&rcReqs);
 
-		/* Read Sensor Data */
-		read_sensor_data(&sensPackage);
+		/* Read IMU */
+		imu_read(&imu);
 
 		/* Estimate State */
 		estimate_state(&sensPackage, &sysState);
