@@ -7,72 +7,40 @@
 
 #pragma once
 
-//#ifndef SRC_IMU_H_
-//#define SRC_IMU_H_
-//#endif /* SRC_IMU_H_ */
-
 /* Includes ------------------------------------------------------------------*/
 #include <stdint.h>
-#include "main.h"
-#include "common/maths.h"
+#include "stm32f4xx_hal.h"
+#include "sensors/sensor.h"
 
-/* Private defines -----------------------------------------------------------*/
+/* Exported macros -----------------------------------------------------------*/
+#define IMU_OK			SENSOR_OK
+#define IMU_ERROR_WARN	SENSOR_ERROR_WARN
+#define IMU_ERROR_FATAL	SENSOR_ERROR_FATAL
 
-/* SETTINGS-------------------------------------------------------------------*/	//CAUTION WHEN ADJUSTING
-//XL SCALE FACTOR & NONORTHOGONALITY CORRECTIONS
-#define S11_xl					0.989193f
-#define S12_xl					0.000006f
-#define S13_xl				    -0.004648f
-#define S21_xl					0.000006f
-#define S22_xl					1.009450f
-#define S23_xl					0.000445f
-#define S31_xl				    -0.004648f
-#define S32_xl					0.000445f
-#define S33_xl					0.993932f
-//BIAS OFFSETS
-#define GYRO_XBIASOFFSET_MDPS	-280.0f
-#define GYRO_YBIASOFFSET_MDPS	-490.0f
-#define GYRO_ZBIASOFFSET_MDPS	-140.0f
-#define ACCEL_XBIASOFFSET_MG	-4.939707f
-#define ACCEL_YBIASOFFSET_MG	-20.213588f
-#define ACCEL_ZBIASOFFSET_MG	1.963071f
-//CUTOFF FREQ
-#define GYRO_LPF_CUTOFF_FREQ	2*PI*500.0f //(rad/s)
-/*----------------------------------------------------------------------------*/
-
-extern I2C_HandleTypeDef hi2c1;
+/* Exported aliases ----------------------------------------------------------*/
+typedef sensor_status_t imu_status_t;
+typedef sensor_interface_t imu_interface_t;
 
 /* Exported types ------------------------------------------------------------*/
-typedef union {
-  int16_t i16bit[3];
-  uint8_t u8bit[6];
-} axis3bit16_t;
+typedef struct imuSixDOF {
+	float accel_x;
+	float accel_y;
+	float accel_z;
+	float rate_x;
+	float rate_y;
+	float rate_z;
+	uint32_t prev_timestamp;
+	uint32_t curr_timestamp;
+} imu_6D_t;
 
-typedef union {
-  int16_t i16bit;
-  uint8_t u8bit[2];
-} axis1bit16_t;
+/* External variables --------------------------------------------------------*/
+extern const I2C_HandleTypeDef* phi2c;
+// extern const SPI_HandleTypeDef* phspi;
+extern const void* platform_handle;
 
-typedef struct threedofSensor {
-	float x;
-	float y;
-	float z;
-	float x_filtered;
-	float y_filtered;
-	float z_filtered;
-	float timestep;
-	axis3bit16_t raw;
-} sensor_3d;
+/* Exported functions --------------------------------------------------------*/
+imu_status_t imu_init(void);
 
-typedef struct imuDevice {
-	sensor_3d accel;
-	sensor_3d gyro;
-	float timestep;
-} device;
+imu_status_t imu_deinit(void);
 
-/* Exported functions prototypes ---------------------------------------------*/
-
-void lsm6dsox_setup(device *imu);
-
-void read_imu_data(device *imu);
-
+imu_status_t imu_read(void *data);
