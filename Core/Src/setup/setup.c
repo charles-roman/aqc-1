@@ -55,17 +55,3 @@ uint8_t ready_to_fly(device *imu, systemState *st)
 	else
 		return 0;
 }
-
-/**
-  * @brief call sensor setups
-  *
-  * @param  sp		pointer to sensorPackage struct
-  * @retval None
-  */
-void sensor_setup(sensorPackage *sp)
-{
-	lsm6dsox_setup(&sp->imu);
-//	lis3mdl_setup(&sp->mag);
-//	mtk3333_setup(&sp->gps);
-//	bmp390_setup(&sp->bar);
-}

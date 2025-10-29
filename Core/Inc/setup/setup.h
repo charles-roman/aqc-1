@@ -22,5 +22,3 @@ extern TIM_HandleTypeDef htim3;
 
 /* Exported functions prototypes ---------------------------------------------*/
 uint8_t ready_to_fly(device *imu, systemState *st);
-
-void sensor_setup(sensorPackage *sp);

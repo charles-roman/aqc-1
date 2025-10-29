@@ -6,31 +6,12 @@
  */
 
 #include "sensors/imu/imu.h"
-#include "../sensors/mag.h"
-//#include "../sensors/bar.h"
-//#include "../sensors/gps.h"
 #include "flight/system.h"
 //#include "position.h"
 #include "flight/attitude.h"
 #include "flight/pid.h"
 #include "flight/mixer.h"
 #include "common/maths.h"
-
-/**
-  * @brief read sensor data for all devices
-  *
-  * @param  sp		pointer to sensorPackage struct
-  * @retval None
-  */
-void read_sensor_data(sensorPackage *sp)
-{
-	read_imu_data(&sp->imu);
-	//read_mag_data(&sp->mag);
-	//lsm6dsox_read_data(&sp->imu);
-	//lis3mdl_read_data(&sp->mag);
-	//mtk3333_read_data(&sp->gps);
-	//bmp390_read_data(&sp->bar);
-}
 
 /**
   * @brief determine system state (attitude, position, etc.)

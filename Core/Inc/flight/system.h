@@ -47,8 +47,6 @@ typedef struct systemState {
 } systemState;
 
 /* Exported functions prototypes ---------------------------------------------*/
-void read_sensor_data(sensorPackage *sp);
-
 void estimate_state(sensorPackage *sp, systemState *st);
 
 void control_state(sensorPackage *sp, systemState *st);
