@@ -6,59 +6,105 @@
  */
 
 #include <math.h>
+#include <stdint.h>
+#include <stdbool.h>
 #include "flight/attitude.h"
-#include "flight/system.h"
+#include "flight/rc_input.h"
 #include "common/maths.h"
-#include "sensors/imu/imu.h"
-
+#include "common/settings.h"
 
 /**
-  * @brief gets acceleration vector magnitude from accelerometer
-  *
-  * @param accel	pointer to sensor_3d struct
-  * @retval mag		value of magnitude
+  * @brief  Attitude Estimation Filter Selection Setting
   */
-float get_accel_vec_mag(sensor_3d *accel)
-{
-	float accel_x = accel->x;
-	float accel_y = accel->y;
-	float accel_z = accel->z;
-
-	float mag = sqrt(sq(accel_x) + sq(accel_y) + sq(accel_z));
-
-	return mag;
-}
+#define ATTITUDE_FILT			CONFIG_ATTITUDE_FILT
 
 /**
-  * @brief gets attitude of vehicle in terms of Euler angles w.r.t body frame
+  * @brief  Complementary Filter Settings
+  */
+#define COMP_FILT_GAIN_XL	 	CONFIG_COMP_FILT_GAIN_XL
+#define COMP_FILT_GAIN_GYRO	 	CONFIG_COMP_FILT_GAIN_GYRO
+
+/**
+  * @brief  Attitude Angle Take-off Limit Settings
+  */
+#define ROLL_TAKEOFF_LIMIT_DEG	CONFIG_ROLL_TAKEOFF_LIMIT_DEG
+#define PITCH_TAKEOFF_LIMIT_DEG	CONFIG_PITCH_TAKEOFF_LIMIT_DEG
+
+/**
+  * @brief gets attitude of quad-copter in terms of Euler angles w.r.t body frame via complementary filter
   *
-  * @param imu		pointer to (imu) device struct
-  * @param st		pointer to systemState struct
+  * @param  imu		read-only pointer to imu 6d sensor handle
+  * @param	est		pointer to attitude handle
   *
   * @retval None
   */
-void get_attitude(device *imu, systemState *st)
-{
-	float accel_x = imu->accel.x;
-	float accel_y = imu->accel.y;
-	float accel_z = imu->accel.z;
-	float gyro_x = imu->gyro.x;
-	float gyro_y = imu->gyro.y;
-	float gyro_z = imu->gyro.z;
-	float dt = imu->timestep;
+static void complementary_filter(const imu_6D_t *imu, att_estimate_t *est) {
+	/*
+	 * No Inf check needed due to bounded xl data
+	 * No NaN check needed due to guaranteed valid xl data
+	 */
 
-	/* Convert accel data to roll & pitch angle estimates */
-	float roll_est_xl = RAD_TO_DEG(atan2(accel_y, sqrt(sq(accel_z) + sq(accel_x))));
-	float pitch_est_xl = RAD_TO_DEG(atan2(-accel_x, sqrt(sq(accel_z) + sq(accel_y))));
+	/* Compute Timestep */
+	float dt = (float) (imu->curr_timestamp - imu->prev_timestamp);
 
-	/* Convert gyro data to roll & pitch angle estimates */
-	float roll_est_gyro = (MDPS_TO_DPS(gyro_x)*dt) + st->roll.estimate;
-	float pitch_est_gyro = (MDPS_TO_DPS(gyro_y)*dt) + st->pitch.estimate;
+	/* Convert accel data to roll and pitch angle estimates */
+	float xl_roll_est_deg = RAD_TO_DEG(atan2f(imu->accel_y, sqrtf(sq(imu->accel_z) + sq(imu->accel_x))));
+	float xl_pitch_est_deg = RAD_TO_DEG(atan2f(-(imu->accel_x), sqrtf(sq(imu->accel_z) + sq(imu->accel_y))));
 
-	/* Scale and combine estimates and update buffers */
-	st->roll.estimate = (COMP_FILT_GAIN_GYRO)*roll_est_gyro + (COMP_FILT_GAIN_XL)*roll_est_xl;
-	st->pitch.estimate = (COMP_FILT_GAIN_GYRO)*pitch_est_gyro + (COMP_FILT_GAIN_XL)*pitch_est_xl;
+	/* Convert gyro data to roll and pitch angle estimates */
+	float gyro_roll_est_deg = (est->roll_rate_dps * USEC_TO_SEC(dt)) + est->roll_angle_deg;
+	float gyro_pitch_est_deg = (est->pitch_rate_dps * USEC_TO_SEC(dt)) + est->pitch_angle_deg;
 
-	/* Read yawrate and update buffer */
-	st->yaw.estimate = (MDPS_TO_DPS(gyro_z)); //yawrate
+	/* Apply complementary filter to get combined estimates */
+	est->roll_angle_deg = (COMP_FILT_GAIN_GYRO) * gyro_roll_est_deg + (COMP_FILT_GAIN_XL) * xl_roll_est_deg;
+	est->pitch_angle_deg = (COMP_FILT_GAIN_GYRO) * gyro_pitch_est_deg + (COMP_FILT_GAIN_XL) * xl_pitch_est_deg;
+}
+
+/**
+  * @brief updates angular rates and (conditionally) attitude of quad-copter through configured filter
+  *
+  * @param  imu		read-only pointer to imu 6d sensor handle
+  * @param	est		pointer to attitude handle
+  *
+  * @retval attitude status type
+  */
+att_status_t attitude_update(const imu_6D_t *imu, att_estimate_t *est) {
+	/* Get Rates */
+	est->roll_rate_dps = (MDPS_TO_DPS(imu->rate_x));	// roll rate gets gyro x-axis rate
+	est->pitch_rate_dps = (MDPS_TO_DPS(imu->rate_y));	// pitch rate gets gyro y-axis rate
+	est->yaw_rate_dps = (MDPS_TO_DPS(imu->rate_z));		// yaw rate gets gyro z-axis rate */
+
+	/* Get Angles (if in Angle Mode) */
+	mode_status_t flight_mode = rc_get_flight_mode();
+	if (flight_mode == ANGLE_MODE) {
+		#if ATTITUDE_FILT == COMP_FILT_ID
+			complementary_filter(imu, est);
+		#else
+			#error "Invalid Attitude Filter Configuration"
+		#endif
+	}
+
+	return ATTITUDE_OK;
+}
+
+/**
+  * @brief determines if quad-copter is right side up
+  *
+  * @param  imu		read-only pointer to imu 6d sensor handle
+  * @retval			boolean
+  */
+bool attitude_is_right_side_up(const imu_6D_t *imu) {
+	/* Check sign of accel vector z component */
+	return SIGN(imu->accel_z) == POSITIVE;
+}
+
+/**
+  * @brief determines if quad-copter attitude is within limits
+  *
+  * @param  est		read-only pointer to attitude handle
+  * @retval			boolean
+  */
+bool attitude_within_limits(const att_estimate_t *est) {
+	/* Check roll & pitch angles are within tolerance */
+	return (fabs(est->roll_angle_deg) < ROLL_TAKEOFF_LIMIT_DEG) && (fabs(est->pitch_angle_deg) < PITCH_TAKEOFF_LIMIT_DEG);
 }

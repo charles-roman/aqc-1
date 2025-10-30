@@ -7,21 +7,34 @@
 
 #pragma once
 
-//#ifndef SRC_ATTITUDE_H_
-//#define SRC_ATTITUDE_H_
-//#endif /* SRC_ATTITUDE_H_ */
+/* Includes ------------------------------------------------------------------*/
+#include "sensors/imu/imu.h"
 
-#include "system.h"
+/* Exported Types ------------------------------------------------------------*/
+/**
+  * @brief  Attitude / Angular Rates Status Type
+  */
+typedef enum {
+	ATTITUDE_OK,
+	ATTITUDE_ERROR_WARN,
+	ATTITUDE_ERROR_FATAL
+} att_status_t;
 
-/* Private defines -----------------------------------------------------------*/
-
-/* SETTINGS-------------------------------------------------------------------*/ //CAUTION WHEN ADJUSTING
-//COMPLEMENTARY FILTER GAINS
-#define COMP_FILT_GAIN_XL	 	0.02
-#define COMP_FILT_GAIN_GYRO	 	(1 - COMP_FILT_GAIN_XL)
-/*----------------------------------------------------------------------------*/
+/**
+  * @brief  Attitude / Angular Rates Estimate Type
+  */
+typedef struct {
+	float roll_angle_deg;
+	float pitch_angle_deg;
+	// float yaw_angle_deg; (this requires magnetometer readings)
+	float roll_rate_dps;
+	float pitch_rate_dps;
+	float yaw_rate_dps;
+} att_estimate_t;
 
 /* Exported functions prototypes ---------------------------------------------*/
-float get_accel_vec_mag(sensor_3d *accel);
+att_status_t attitude_update(const imu_6D_t *imu, att_estimate_t *est);
 
-void get_attitude(device *imu, systemState *st);
+bool attitude_is_right_side_up(const imu_6D_t *imu);
+
+bool attitude_within_limits(const att_estimate_t *est);
