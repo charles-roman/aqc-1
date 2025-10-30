@@ -7,15 +7,15 @@
 
 #pragma once
 
-/* Includes ------------------------------------------------------------------*/
+/* Includes ---------------------------------------------------------------------*/
 #include <stdbool.h>
 #include <stdint.h>
 
-/* Exported constants --------------------------------------------------------*/
+/* Exported macro constants -----------------------------------------------------*/
 #define PI     3.14159265358979323846f
 #define RAD    (PI / 180.0f)
 
-/* Exported macros -----------------------------------------------------------*/
+/* Exported macro functions -----------------------------------------------------*/
 #define DEG_TO_RAD(angle) ((angle) * RAD)
 #define RAD_TO_DEG(angle) ((angle) / RAD)
 #define MDPS_TO_DPS(rate) ((rate) / 1000)
@@ -50,6 +50,13 @@
 #define SIGN(x) \
   __extension__ ({ __typeof__ (x) _x = (x); \
   (_x > 0) - (_x < 0); })
+
+/* Exported types ---------------------------------------------------------------*/
+typedef enum {
+	NEGATIVE = -1,
+	NEUTRAL  = 	0,
+	POSITIVE = 	1
+} sign_t;
 
 /* Exported static inline functions ---------------------------------------------*/
 static inline float constrainf(float val, float min, float max) {
