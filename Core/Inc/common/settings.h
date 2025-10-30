@@ -34,8 +34,14 @@
 #define CONFIG_THROTTLE_IDLE_TOLERANCE_PCT		2.0f
 
 // ATTITUDE-------------------------------------------------------------------
+#define COMP_FILT_ID							0U
+#define CONFIG_ATTITUDE_FILT					COMP_FILT_ID
+
 #define CONFIG_COMP_FILT_GAIN_XL	 			0.02f
-#define CONFIG_COMP_FILT_GAIN_GYRO	 			(1 - COMP_FILT_GAIN_XL)
+#define CONFIG_COMP_FILT_GAIN_GYRO	 			(1 - CONFIG_COMP_FILT_GAIN_XL)
+
+#define CONFIG_ROLL_TAKEOFF_LIMIT_DEG			10.0f
+#define CONFIG_PITCH_TAKEOFF_LIMIT_DEG			10.0f
 
 // PID------------------------------------------------------------------------
 #define CONFIG_ROLL_PID_GAINS					{8.5f, 8.0f, 0.80f}
