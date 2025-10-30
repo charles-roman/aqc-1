@@ -33,8 +33,8 @@
 #include "common/maths.h"
 #include "common/led.h"
 #include "flight/system.h"
-#include "flight/failsafe.h"
 #include "flight/rc_input.h"
+#include "flight/attitude.h"
 #include "flight/pid.h"
 #include "flight/mixer.h"
 #include "setup/setup.h"
@@ -111,11 +111,13 @@ int main(void)
   rx_status_t rx_status;
   esc_status_t esc_status;
   imu_status_t imu_status;
+  att_status_t att_status;
   rc_req_status_t rc_status;
 
   static imu_6D_t imu;
   static rc_reqs_t rcReqs;
   static mtr_cmds_t mtrCmds;
+  static att_estimate_t attEst;
   static sensorPackage sensPackage;
   static systemState sysState = {{.command_limit = ROLL_CMD_LIM, .gains = ROLL_PID, .clamp = 1},
   	  	  	  	  	  	  	  	 {.command_limit = PITCH_CMD_LIM, .gains = PITCH_PID, .clamp = 1},
@@ -212,7 +214,7 @@ int main(void)
 		imu_read(&imu);
 
 		/* Estimate State */
-		estimate_state(&sensPackage, &sysState);
+		attitude_update(&imu, &attEst);
 
 		/* PID Control */
 		control_state(&sensPackage, &sysState);
