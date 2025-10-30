@@ -14,20 +14,6 @@
 #include "common/maths.h"
 
 /**
-  * @brief determine system state (attitude, position, etc.)
-  *
-  * @param  sp		pointer to sensorPackage struct
-  * @param  st		pointer to systemState struct
-  *
-  * @retval None
-  */
-void estimate_state(sensorPackage *sp, systemState *st)
-{
-	get_attitude(&sp->imu, st);
-	//get_position(sp->gps, sp->bar, est->position);
-}
-
-/**
   * @brief control system state (attitude, position, throttle, etc.)
   *
   * @param  sp		pointer to sensorPackage struct
