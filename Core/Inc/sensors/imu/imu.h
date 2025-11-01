@@ -29,8 +29,7 @@ typedef struct imuSixDOF {
 	float rate_x;
 	float rate_y;
 	float rate_z;
-	uint32_t prev_timestamp;
-	uint32_t curr_timestamp;
+	uint32_t dt;
 } imu_6D_t;
 
 /* External variables --------------------------------------------------------*/

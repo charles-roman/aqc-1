@@ -211,9 +211,17 @@ static lsm6dsox_interface_status_t lsm6dsox_read(void *data) {
 	lsm6dsox_status_reg_get(&dev_ctx, &reg.status_reg);
 
     if (reg.status_reg.xlda || reg.status_reg.gda) {
+    	static uint32_t prev_timestamp;
+
     	/* Read time stamp value */
-    	imu->prev_timestamp = imu->curr_timestamp;
-    	lsm6dsox_timestamp_raw_get(&dev_ctx, &(imu->curr_timestamp));
+    	uint32_t curr_timestamp;
+    	lsm6dsox_timestamp_raw_get(&dev_ctx, &curr_timestamp);
+
+    	/* Compute time step */
+    	imu->dt = curr_timestamp - prev_timestamp;
+
+    	/* Store current time stamp in previous */
+    	prev_timestamp = curr_timestamp;
     }
 
     if (reg.status_reg.xlda) {
