@@ -111,13 +111,14 @@ int main(void)
   rx_status_t rx_status;
   esc_status_t esc_status;
   imu_status_t imu_status;
-  att_status_t att_status;
+  attitude_status_t att_status;
   rc_req_status_t rc_status;
 
   static imu_6D_t imu;
   static rc_reqs_t rcReqs;
   static mtr_cmds_t mtrCmds;
-  static att_estimate_t attEst;
+  attitude_est_t attEst = {0};
+  attitude_cmd_t attCmd = {0};
   static sensorPackage sensPackage;
   static systemState sysState = {{.command_limit = ROLL_CMD_LIM, .gains = ROLL_PID, .clamp = 1},
   	  	  	  	  	  	  	  	 {.command_limit = PITCH_CMD_LIM, .gains = PITCH_PID, .clamp = 1},
@@ -176,6 +177,9 @@ int main(void)
   imu_status = imu_init();
   // CHECK(imu_status);
 
+  /* Initialize Attitude Controller */
+  attitude_controller_init();
+
   /* Start Timer */
   start_timer(&htim6); //general purpose timer
 
@@ -213,11 +217,11 @@ int main(void)
 		/* Read IMU */
 		imu_read(&imu);
 
-		/* Estimate State */
-		attitude_update(&imu, &attEst);
+		/* Update Attitude Estimation */
+		attitude_estimator_update(&imu, &attEst);
 
-		/* PID Control */
-		control_state(&sensPackage, &sysState);
+		/* Update Attitude PID Controllers */
+		attitude_controller_update(&attCmd, &rcReqs, &attEst, imu->dt);
 
 		/* Apply Motor Mixing Algorithm & Set Duty Cycles */
 		actuator_set(&sensPackage, &sysState, &mtrCmds);
