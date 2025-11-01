@@ -30,10 +30,12 @@ typedef enum {
   * @brief  RC State Request Handle
   */
 typedef struct rc_reqs {
-	float roll;
-	float pitch;
+	float roll_angle;
+	float pitch_angle;
+	float roll_rate;
+	float pitch_rate;
+	float yaw_rate;
 	float throttle;
-	float yaw;
 } rc_reqs_t;
 
 /* Exported functions prototypes ---------------------------------------------*/
@@ -47,4 +49,4 @@ mode_status_t rc_get_flight_mode(void);
 
 bool rc_is_armed(void);
 
-bool rc_is_throttle_idle(void);
+bool rc_is_throttle_idle(const float throttle_req);

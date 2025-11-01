@@ -5,6 +5,7 @@
  *      Author: charlieroman
  */
 
+#include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include "flight/rc_input.h"
@@ -71,12 +72,8 @@ typedef enum {
 /**
   * @brief  Interface for Channel Mapping
   */
-static rc_req_status_t (*map_channel_to_state_request)(aetr_rc_channel_t ch, uint32_t val, float *req) = NULL;
+static rc_req_status_t (*map_channel_to_state_request)(const aetr_rc_channel_t, uint32_t, rc_reqs_t*) = NULL;
 
-/**
-  * @brief  State Request Variable(s)
-  */
-static float throttle_request = 0.0f;
 
 /**
   * @brief map pwm pulse to valid state variable request
@@ -87,9 +84,8 @@ static float throttle_request = 0.0f;
   *
   * @retval rc request status
   */
-static rc_req_status_t map_pulse_to_state_request(aetr_rc_channel_t ch, uint32_t val, float *req) {
+static rc_req_status_t map_pulse_to_state_request(const aetr_rc_channel_t ch, uint32_t val, rc_reqs_t *req) {
 	rc_req_status_t req_status = RC_REQ_OK;
-	mode_status_t mode_status;
 
 	/* Sanitize Pulse Width */
 	if (!inrange_u32(val, PWM_PULSE_VALID_MIN_US, PWM_PULSE_VALID_MAX_US)) {
@@ -98,48 +94,27 @@ static rc_req_status_t map_pulse_to_state_request(aetr_rc_channel_t ch, uint32_t
 
 	} else if (!inrange_u32(val, PWM_PULSE_MIN_US, PWM_PULSE_MAX_US)) {
 		val = constrain_u32(val, PWM_PULSE_MIN_US, PWM_PULSE_MAX_US);
-	}
 
-	/* Get Mode Status */
-	mode_status = rc_get_mode_status();
+	}
 
 	/* Map Pulse Width and Update Request */
 	switch (ch) {
-		case (ROLL_CHANNEL):
-			if (mode_status == ANGLE_MODE) {
-				*req = mapf((float) val, PWM_PULSE_MIN_US, PWM_PULSE_MAX_US, ROLL_MIN_DEG, ROLL_MAX_DEG);
-
-			} else if (mode_status == RATE_MODE) {
-				*req = mapf((float) val, PWM_PULSE_MIN_US, PWM_PULSE_MAX_US, ROLL_MIN_DPS, ROLL_MAX_DPS);
-
-			} else { // Error: undefined flight mode
-				req_status = RC_REQ_ERROR_WARN;
-				// leave req buffer alone (maintains last state)
-			}
-
+		case ROLL_CHANNEL:
+			req->roll_angle = mapf((float) val, PWM_PULSE_MIN_US, PWM_PULSE_MAX_US, ROLL_MIN_DEG, ROLL_MAX_DEG);
+			req->roll_rate = mapf((float) val, PWM_PULSE_MIN_US, PWM_PULSE_MAX_US, ROLL_MIN_DPS, ROLL_MAX_DPS);
 			break;
 
-		case (PITCH_CHANNEL):
-			if (mode_status == ANGLE_MODE) {
-				*req = mapf((float) val, PWM_PULSE_MIN_US, PWM_PULSE_MAX_US, PITCH_MIN_DEG, PITCH_MAX_DEG);
-
-			} else if (mode_status == RATE_MODE) {
-				*req = mapf((float) val, PWM_PULSE_MIN_US, PWM_PULSE_MAX_US, PITCH_MIN_DPS, PITCH_MAX_DPS);
-
-			} else { // Error: undefined flight mode
-				req_status = RC_REQ_ERROR_WARN;
-				// leave req buffer alone (maintains last state)
-			}
-
+		case PITCH_CHANNEL:
+			req->pitch_angle = mapf((float) val, PWM_PULSE_MIN_US, PWM_PULSE_MAX_US, PITCH_MIN_DEG, PITCH_MAX_DEG);
+			req->pitch_rate = mapf((float) val, PWM_PULSE_MIN_US, PWM_PULSE_MAX_US, PITCH_MIN_DPS, PITCH_MAX_DPS);
 			break;
 
 		case (THROTTLE_CHANNEL):
-			throttle_request = mapf((float) val, PWM_PULSE_MIN_US, PWM_PULSE_MAX_US, THROTTLE_MIN_PCT, THROTTLE_MAX_PCT);	// store throttle_request for rc_is_throttle_idle check
-			*req = throttle_request;
+			req->throttle = mapf((float) val, PWM_PULSE_MIN_US, PWM_PULSE_MAX_US, THROTTLE_MIN_PCT, THROTTLE_MAX_PCT);
 			break;
 
 		case (YAW_CHANNEL):
-			*req = mapf((float) val, PWM_PULSE_MIN_US, PWM_PULSE_MAX_US, YAW_MIN_DPS, YAW_MAX_DPS);
+			req ->yaw_rate = mapf((float) val, PWM_PULSE_MIN_US, PWM_PULSE_MAX_US, YAW_MIN_DPS, YAW_MAX_DPS);
 			break;
 
 		default:	// Error: unexpected channel mapping
@@ -157,12 +132,15 @@ static rc_req_status_t map_pulse_to_state_request(aetr_rc_channel_t ch, uint32_t
   */
 rc_req_status_t rc_init(void) {
 	#if RX_PROTOCOL == RX_PWM_PROTOCOL_ID
-	map_channel_to_state_request = map_pulse_to_state_request;
-	return RC_REQ_OK;
-
+		map_channel_to_state_request = map_pulse_to_state_request;
 	#else
-	return RC_REQ_ERROR_FATAL
+		#error "Invalid Rx Protocol Configuration"
 	#endif
+
+	if (map_channel_to_state_request == NULL)
+		return RC_REQ_ERROR_FATAL;
+
+	return RC_REQ_OK;
 }
 
 /**
@@ -190,19 +168,19 @@ rc_req_status_t rc_get_requests(rc_reqs_t *req) {
 		return RC_REQ_ERROR_FATAL;
 
 	val = rx_get_channel(ROLL_CHANNEL); // Note: the return value can be validated if the channel may be undefined
-	if (map_channel_to_state_request(ROLL_CHANNEL, val, &(req->roll)) != RC_REQ_OK)
+	if (map_channel_to_state_request(ROLL_CHANNEL, val, req) != RC_REQ_OK)
 		status = RC_REQ_ERROR_WARN;
 
 	val = rx_get_channel(PITCH_CHANNEL); // Note: the return value can be validated if the channel may be undefined
-	if (map_channel_to_state_request(PITCH_CHANNEL, val, &(req->pitch)) != RC_REQ_OK)
+	if (map_channel_to_state_request(PITCH_CHANNEL, val, req) != RC_REQ_OK)
 		status = RC_REQ_ERROR_WARN;
 
 	val = rx_get_channel(THROTTLE_CHANNEL); // Note: the return value can be validated if the channel may be undefined
-	if (map_channel_to_state_request(THROTTLE_CHANNEL, val, &(req->throttle)) != RC_REQ_OK)
+	if (map_channel_to_state_request(THROTTLE_CHANNEL, val, req) != RC_REQ_OK)
 		status = RC_REQ_ERROR_WARN;
 
 	val = rx_get_channel(YAW_CHANNEL); // Note: the return value can be validated if the channel may be undefined
-	if (map_channel_to_state_request(YAW_CHANNEL, val, &(req->yaw)) != RC_REQ_OK)
+	if (map_channel_to_state_request(YAW_CHANNEL, val, req) != RC_REQ_OK)
 		status = RC_REQ_ERROR_WARN;
 
 	return status;
@@ -244,7 +222,7 @@ bool rc_is_armed(void) {
   *
   * @retval ret		boolean
   */
-bool rc_is_throttle_idle(void) {
+bool rc_is_throttle_idle(const float throttle_req) {
 	/* Determine if throttle is within idle tolerance */
-	return (throttle_request <= THROTTLE_IDLE_TOLERANCE_PCT);
+	return (throttle_req <= THROTTLE_IDLE_TOLERANCE_PCT);
 }
