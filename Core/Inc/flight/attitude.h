@@ -8,7 +8,10 @@
 #pragma once
 
 /* Includes ------------------------------------------------------------------*/
+#include <stdbool.h>
 #include "sensors/imu/imu.h"
+#include "flight/rc_input.h"
+#include "flight/pid.h"
 
 /* Exported Types ------------------------------------------------------------*/
 /**
@@ -18,7 +21,7 @@ typedef enum {
 	ATTITUDE_OK,
 	ATTITUDE_ERROR_WARN,
 	ATTITUDE_ERROR_FATAL
-} att_status_t;
+} attitude_status_t;
 
 /**
   * @brief  Attitude / Angular Rates Estimate Type
@@ -26,15 +29,27 @@ typedef enum {
 typedef struct {
 	float roll_angle_deg;
 	float pitch_angle_deg;
-	// float yaw_angle_deg; (this requires magnetometer readings)
 	float roll_rate_dps;
 	float pitch_rate_dps;
 	float yaw_rate_dps;
-} att_estimate_t;
+} attitude_est_t;
+
+/**
+  * @brief  Attitude / Angular Rates Command Type
+  */
+typedef struct {
+	float roll;
+	float pitch;
+	float yaw;
+} attitude_cmd_t;
 
 /* Exported functions prototypes ---------------------------------------------*/
-att_status_t attitude_update(const imu_6D_t *imu, att_estimate_t *est);
+attitude_status_t attitude_estimator_update(const imu_6D_t *imu, attitude_est_t *est);
+
+attitude_status_t attitude_controller_update(attitude_cmd_t *cmd, const rc_reqs_t *req, const attitude_est_t *est, float dt);
+
+void attitude_controller_init(void);
 
 bool attitude_is_right_side_up(const imu_6D_t *imu);
 
-bool attitude_within_limits(const att_estimate_t *est);
+bool attitude_within_limits(const attitude_est_t *est);
