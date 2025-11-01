@@ -47,8 +47,6 @@ typedef struct systemState {
 } systemState;
 
 /* Exported functions prototypes ---------------------------------------------*/
-void control_state(sensorPackage *sp, systemState *st);
-
 void actuator_set(sensorPackage *sp, systemState *st, mtrCommands *cmd);
 
 //void record_data(systemState *st, mtrCommands *cmd);
