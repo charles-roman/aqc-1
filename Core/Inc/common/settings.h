@@ -18,20 +18,20 @@
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 -----------------------------------------------------------------------------------*/
 // RC INPUT-------------------------------------------------------------------
-#define CONFIG_ROLL_MIN_DEG						-10.0f
-#define CONFIG_ROLL_MAX_DEG	 	 				10.0f
-#define CONFIG_ROLL_MIN_DPS						-180.0f
-#define CONFIG_ROLL_MAX_DPS						180.0f
-#define CONFIG_PITCH_MIN_DEG					-10.0f
-#define CONFIG_PITCH_MAX_DEG	 				10.0f
-#define CONFIG_PITCH_MIN_DPS					-180.0f
-#define CONFIG_PITCH_MAX_DPS					180.0f
-#define CONFIG_YAW_MIN_DPS						-180.0f
-#define CONFIG_YAW_MAX_DPS						180.0f
-#define CONFIG_THROTTLE_MIN_PCT	 				0.0f
-#define CONFIG_THROTTLE_MAX_PCT	 				100.0f
+#define CONFIG_ROLL_MAX_DEG	 	 					10.0f
+#define CONFIG_ROLL_MIN_DEG							-CONFIG_ROLL_MAX_DEG
+#define CONFIG_ROLL_MAX_DPS							180.0f
+#define CONFIG_ROLL_MIN_DPS							-CONFIG_ROLL_MAX_DPS
+#define CONFIG_PITCH_MAX_DEG	 					10.0f
+#define CONFIG_PITCH_MIN_DEG						-CONFIG_PITCH_MAX_DEG
+#define CONFIG_PITCH_MAX_DPS						180.0f
+#define CONFIG_PITCH_MIN_DPS						-CONFIG_PITCH_MAX_DPS
+#define CONFIG_YAW_MAX_DPS							180.0f
+#define CONFIG_YAW_MIN_DPS							-CONFIG_YAW_MAX_DPS
+#define CONFIG_THROTTLE_MIN_PCT	 					0.0f
+#define CONFIG_THROTTLE_MAX_PCT	 					100.0f
 
-#define CONFIG_THROTTLE_IDLE_TOLERANCE_PCT		2.0f
+#define CONFIG_THROTTLE_IDLE_TOLERANCE_PCT			2.0f
 
 // ATTITUDE-------------------------------------------------------------------
 #define COMP_FILT_ID								0U
