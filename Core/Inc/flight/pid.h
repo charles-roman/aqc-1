@@ -7,41 +7,40 @@
 
 #pragma once
 
-//#ifndef SRC_PID_H_
-//#define SRC_PID_H_
-//#endif /* SRC_PID_H_ */
-
 /* Includes ------------------------------------------------------------------*/
-#include <stdint.h>
-#include "system.h"
-#include "common/maths.h"
-
-/* Private defines -----------------------------------------------------------*/
-/* SETTINGS-------------------------------------------------------------------*/ // CAUTION WHEN ADJUSTING, CRITICAL SETTINGS
-#define ROLL_PID			{8.5, 0, 0}//{8.5, 8.0, 0.80}
-#define PITCH_PID			{11.5, 11.0, 0.85}
-#define YAW_PID				{7.5, 5.5, 0}
-#define XPOS_PID			{1, 1, 1}
-#define YPOS_PID			{1, 1, 1}
-#define ZPOS_PID			{1, 1, 1}
-
-#define ROLL_CMD_LIM		150
-#define PITCH_CMD_LIM		150
-#define YAW_CMD_LIM			150
-#define XPOS_CMD_LIM		0
-#define YPOS_CMD_LIM		0
-#define ZPOS_CMD_LIM		0
-
-#define LPF_CUTOFF_FREQ		2*PI*75.0f // rad/s
-/*----------------------------------------------------------------------------*/
+#include <stdbool.h>
 
 /* Exported types ------------------------------------------------------------*/
 typedef struct {
-	float error;
-	float error_total;
-	float gains[3];
-	uint8_t clamp;
-} pidProfile;
+	float Kp;
+	float Ki;
+	float Kd;
+	float Wc;
+	float limit;
+	float integrator_limit;
+} pid_config_t;
+
+typedef struct {
+	float Kp;
+	float Ki;
+	float Kd;
+	float tau;
+	float limit;
+	// float dt;
+	bool integrator_enable;
+	float integrator_limit;
+	float integrator;
+	float differentiator;
+	float prev_error;
+	float prev_measurement;
+	float out;
+} pid_ctrl_t;
 
 /* Exported functions prototypes ---------------------------------------------*/
-void pid_control(state *st, float dt);
+float pid_update(pid_ctrl_t *pid, float measurement, float setpoint, float dt);
+
+void pid_init(pid_ctrl_t *ctrl, const pid_config_t *config);
+
+void pid_resync(pid_ctrl_t *pid, float measurement, float setpoint);
+
+void pid_reset(pid_ctrl_t *pid);
