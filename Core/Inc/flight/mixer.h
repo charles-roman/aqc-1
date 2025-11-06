@@ -7,15 +7,16 @@
 
 #pragma once
 
-//#ifndef SRC_MIXER_H_
-//#define SRC_MIXER_H_
-//#endif /* SRC_MIXER_H_ */
-
 /* Includes ------------------------------------------------------------------*/
-#include "system.h"
+#include "flight/attitude.h"
 #include "esc/esc.h"
+#include "common/settings.h"
 
-/* Exported functions prototypes ---------------------------------------------*/
-void motor_mixing(systemState *st, mtr_cmds_t *cmd);
+/* Exported function prototypes ----------------------------------------------*/
+void mixer_init(void);
 
-void thrust_compensation(sensor_3d *accel, mtrCommands *cmd);
+void mixer_update(mtr_cmds_t *mcmd, const attitude_cmd_t *acmd, float throttle_req_pct);
+
+void thrust_compensate(mtr_cmds_t *mcmd, const attitude_est_t *est);
+
+float map_pct_to_mtr_cmd(float pct);
