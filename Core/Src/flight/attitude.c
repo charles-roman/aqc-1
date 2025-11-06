@@ -7,6 +7,7 @@
 
 #include <math.h>
 #include "flight/attitude.h"
+#include "flight/mixer.h"
 #include "esc/esc.h"
 #include "common/maths.h"
 #include "common/settings.h"
@@ -34,47 +35,72 @@
 #define ROLL_ANGLE_P_GAIN					CONFIG_ROLL_ANGLE_P_GAIN
 #define ROLL_ANGLE_I_GAIN					CONFIG_ROLL_ANGLE_I_GAIN
 #define ROLL_ANGLE_D_GAIN					CONFIG_ROLL_ANGLE_D_GAIN
-#define ROLL_ANGLE_D_LPF_CUTOFF_FREQ_RPS	CONFIG_ROLL_ANGLE_D_LPF_CUTOFF_FREQ_RPS
-#define ROLL_ANGLE_CMD_LIM					CONFIG_ROLL_ANGLE_CMD_LIM
-#define ROLL_ANGLE_I_CMD_LIM				CONFIG_ROLL_ANGLE_I_CMD_LIM
+#define ROLL_ANGLE_D_LPF_CUTOFF_FREQ_HZ		CONFIG_ROLL_ANGLE_D_LPF_CUTOFF_FREQ_HZ
+#define ROLL_ANGLE_CMD_LIM_DPS				CONFIG_ROLL_ANGLE_CMD_LIM_DPS
+#define ROLL_ANGLE_I_CMD_LIM_DPS			CONFIG_ROLL_ANGLE_I_CMD_LIM_DPS
 
-#define PID_CONFIG_ROLL_ANGLE				{ROLL_ANGLE_P_GAIN, ROLL_ANGLE_I_GAIN, ROLL_ANGLE_D_GAIN, ROLL_ANGLE_D_LPF_CUTOFF_FREQ_RPS, ROLL_ANGLE_CMD_LIM, ROLL_ANGLE_I_CMD_LIM}
+#define PID_CONFIG_ROLL_ANGLE				{ROLL_ANGLE_P_GAIN, \
+											 ROLL_ANGLE_I_GAIN, \
+											 ROLL_ANGLE_D_GAIN, \
+											 ROLL_ANGLE_D_LPF_CUTOFF_FREQ_HZ, \
+											 ROLL_ANGLE_CMD_LIM_DPS, \
+											 ROLL_ANGLE_I_CMD_LIM_DPS}
 
 #define PITCH_ANGLE_P_GAIN					CONFIG_PITCH_ANGLE_P_GAIN
 #define PITCH_ANGLE_I_GAIN					CONFIG_PITCH_ANGLE_I_GAIN
 #define PITCH_ANGLE_D_GAIN					CONFIG_PITCH_ANGLE_D_GAIN
-#define PITCH_ANGLE_D_LPF_CUTOFF_FREQ_RPS	CONFIG_PITCH_ANGLE_D_LPF_CUTOFF_FREQ_RPS
-#define PITCH_ANGLE_CMD_LIM					CONFIG_PITCH_ANGLE_CMD_LIM
-#define PITCH_ANGLE_I_CMD_LIM				CONFIG_PITCH_ANGLE_I_CMD_LIM
+#define PITCH_ANGLE_D_LPF_CUTOFF_FREQ_HZ	CONFIG_PITCH_ANGLE_D_LPF_CUTOFF_FREQ_HZ
+#define PITCH_ANGLE_CMD_LIM_DPS				CONFIG_PITCH_ANGLE_CMD_LIM_DPS
+#define PITCH_ANGLE_I_CMD_LIM_DPS			CONFIG_PITCH_ANGLE_I_CMD_LIM_DPS
 
-#define PID_CONFIG_PITCH_ANGLE				{PITCH_ANGLE_P_GAIN, PITCH_ANGLE_I_GAIN, PITCH_ANGLE_D_GAIN, PITCH_ANGLE_D_LPF_CUTOFF_FREQ_RPS, PITCH_ANGLE_CMD_LIM, PITCH_ANGLE_I_CMD_LIM}
+#define PID_CONFIG_PITCH_ANGLE				{PITCH_ANGLE_P_GAIN, \
+											 PITCH_ANGLE_I_GAIN, \
+											 PITCH_ANGLE_D_GAIN, \
+											 PITCH_ANGLE_D_LPF_CUTOFF_FREQ_HZ, \
+											 PITCH_ANGLE_CMD_LIM_DPS, \
+											 PITCH_ANGLE_I_CMD_LIM_DPS}
 
 #define ROLL_RATE_P_GAIN					CONFIG_ROLL_RATE_P_GAIN
 #define ROLL_RATE_I_GAIN					CONFIG_ROLL_RATE_I_GAIN
 #define ROLL_RATE_D_GAIN					CONFIG_ROLL_RATE_D_GAIN
-#define ROLL_RATE_D_LPF_CUTOFF_FREQ_RPS		CONFIG_ROLL_RATE_D_LPF_CUTOFF_FREQ_RPS
-#define ROLL_RATE_CMD_LIM					CONFIG_ROLL_RATE_CMD_LIM
-#define ROLL_RATE_I_CMD_LIM					CONFIG_ROLL_RATE_I_CMD_LIM
+#define ROLL_RATE_D_LPF_CUTOFF_FREQ_HZ		CONFIG_ROLL_RATE_D_LPF_CUTOFF_FREQ_HZ
+#define ROLL_RATE_CMD_LIM_PCT				CONFIG_ROLL_RATE_CMD_LIM_PCT
+#define ROLL_RATE_I_CMD_LIM_PCT				CONFIG_ROLL_RATE_I_CMD_LIM_PCT
 
-#define PID_CONFIG_ROLL_RATE				{ROLL_RATE_P_GAIN, ROLL_RATE_I_GAIN, ROLL_RATE_D_GAIN, ROLL_RATE_D_LPF_CUTOFF_FREQ_RPS, ROLL_RATE_CMD_LIM, ROLL_RATE_I_CMD_LIM}
+#define PID_CONFIG_ROLL_RATE				{ROLL_RATE_P_GAIN, \
+											 ROLL_RATE_I_GAIN, \
+											 ROLL_RATE_D_GAIN, \
+											 ROLL_RATE_D_LPF_CUTOFF_FREQ_HZ, \
+											 ROLL_RATE_CMD_LIM_PCT, \
+											 ROLL_RATE_I_CMD_LIM_PCT}
 
 #define PITCH_RATE_P_GAIN					CONFIG_PITCH_RATE_P_GAIN
 #define PITCH_RATE_I_GAIN					CONFIG_PITCH_RATE_I_GAIN
 #define PITCH_RATE_D_GAIN					CONFIG_PITCH_RATE_D_GAIN
-#define PITCH_RATE_D_LPF_CUTOFF_FREQ_RPS	CONFIG_PITCH_RATE_D_LPF_CUTOFF_FREQ_RPS
-#define PITCH_RATE_CMD_LIM					CONFIG_PITCH_RATE_CMD_LIM
-#define PITCH_RATE_I_CMD_LIM				CONFIG_PITCH_RATE_I_CMD_LIM
+#define PITCH_RATE_D_LPF_CUTOFF_FREQ_HZ		CONFIG_PITCH_RATE_D_LPF_CUTOFF_FREQ_HZ
+#define PITCH_RATE_CMD_LIM_PCT				CONFIG_PITCH_RATE_CMD_LIM_PCT
+#define PITCH_RATE_I_CMD_LIM_PCT			CONFIG_PITCH_RATE_I_CMD_LIM_PCT
 
-#define PID_CONFIG_PITCH_RATE				{PITCH_RATE_P_GAIN, PITCH_RATE_I_GAIN, PITCH_RATE_D_GAIN, PITCH_RATE_D_LPF_CUTOFF_FREQ_RPS, PITCH_RATE_CMD_LIM, PITCH_RATE_I_CMD_LIM}
+#define PID_CONFIG_PITCH_RATE				{PITCH_RATE_P_GAIN, \
+											 PITCH_RATE_I_GAIN, \
+											 PITCH_RATE_D_GAIN, \
+											 PITCH_RATE_D_LPF_CUTOFF_FREQ_HZ, \
+											 PITCH_RATE_CMD_LIM_PCT, \
+											 PITCH_RATE_I_CMD_LIM_PCT}
 
 #define YAW_RATE_P_GAIN						CONFIG_YAW_RATE_P_GAIN
 #define YAW_RATE_I_GAIN						CONFIG_YAW_RATE_I_GAIN
 #define YAW_RATE_D_GAIN						CONFIG_YAW_RATE_D_GAIN
-#define YAW_RATE_D_LPF_CUTOFF_FREQ_RPS		CONFIG_YAW_RATE_D_LPF_CUTOFF_FREQ_RPS
-#define YAW_RATE_CMD_LIM					CONFIG_YAW_RATE_CMD_LIM
-#define YAW_RATE_I_CMD_LIM					CONFIG_YAW_RATE_I_CMD_LIM
+#define YAW_RATE_D_LPF_CUTOFF_FREQ_HZ		CONFIG_YAW_RATE_D_LPF_CUTOFF_FREQ_HZ
+#define YAW_RATE_CMD_LIM_PCT				CONFIG_YAW_RATE_CMD_LIM_PCT
+#define YAW_RATE_I_CMD_LIM_PCT				CONFIG_YAW_RATE_I_CMD_LIM_PCT
 
-#define PID_CONFIG_YAW_RATE					{YAW_RATE_P_GAIN, YAW_RATE_I_GAIN, YAW_RATE_D_GAIN, YAW_RATE_D_LPF_CUTOFF_FREQ_RPS, YAW_RATE_CMD_LIM, YAW_RATE_I_CMD_LIM}
+#define PID_CONFIG_YAW_RATE					{YAW_RATE_P_GAIN, \
+											 YAW_RATE_I_GAIN, \
+											 YAW_RATE_D_GAIN, \
+											 YAW_RATE_D_LPF_CUTOFF_FREQ_HZ, \
+											 YAW_RATE_CMD_LIM_PCT, \
+											 YAW_RATE_I_CMD_LIM_PCT}
 
 /*
  * @brief ESC Command Settings
@@ -91,6 +117,7 @@ static pid_ctrl_t pitch_rate_pid;
 static pid_ctrl_t yaw_rate_pid;
 
 
+#if ATTITUDE_FILT == COMP_FILT_ID
 /**
   * @brief gets attitude of quad-copter in terms of Euler angles w.r.t body frame via complementary filter
   *
@@ -117,6 +144,7 @@ static void complementary_filter(const imu_6D_t *imu, attitude_est_t *est) {
 	est->roll_angle_deg = (COMP_FILT_GAIN_GYRO) * gyro_roll_est_deg + (COMP_FILT_GAIN_XL) * xl_roll_est_deg;
 	est->pitch_angle_deg = (COMP_FILT_GAIN_GYRO) * gyro_pitch_est_deg + (COMP_FILT_GAIN_XL) * xl_pitch_est_deg;
 }
+#endif
 
 /**
   * @brief updates angular rates and (conditionally) attitude of quad-copter through configured filter
@@ -135,8 +163,6 @@ attitude_status_t attitude_estimator_update(const imu_6D_t *imu, attitude_est_t 
 	/* Get Angles */
 	#if ATTITUDE_FILT == COMP_FILT_ID
 		complementary_filter(imu, est);
-	#else
-		#error "Invalid Attitude Filter Configuration"
 	#endif
 
 	return ATTITUDE_OK;
@@ -265,18 +291,29 @@ attitude_status_t attitude_controller_update(attitude_cmd_t *cmd, const rc_reqs_
   * @retval None
   */
 void attitude_controller_init(void) {
+	/* Init Angle PIDs */
 	pid_init(&roll_angle_pid, &(pid_config_t)PID_CONFIG_ROLL_ANGLE);
 	pid_init(&pitch_angle_pid, &(pid_config_t)PID_CONFIG_PITCH_ANGLE);
+
+	/* Init Rate PIDs */
 	pid_init(&roll_rate_pid, &(pid_config_t)PID_CONFIG_ROLL_RATE);
+	roll_rate_pid.limit = map_pct_to_mtr_cmd(roll_rate_pid.limit);
+	roll_rate_pid.integrator_limit = map_pct_to_mtr_cmd(roll_rate_pid.integrator_limit);
+
 	pid_init(&pitch_rate_pid, &(pid_config_t)PID_CONFIG_PITCH_RATE);
+	pitch_rate_pid.limit = map_pct_to_mtr_cmd(pitch_rate_pid.limit);
+	pitch_rate_pid.integrator_limit = map_pct_to_mtr_cmd(pitch_rate_pid.integrator_limit);
+
 	pid_init(&yaw_rate_pid, &(pid_config_t)PID_CONFIG_YAW_RATE);
+	yaw_rate_pid.limit = map_pct_to_mtr_cmd(yaw_rate_pid.limit);
+	yaw_rate_pid.integrator_limit = map_pct_to_mtr_cmd(yaw_rate_pid.integrator_limit);
 }
 
 /**
   * @brief determines if quad-copter is right side up
   *
   * @param  imu		read-only pointer to imu 6d sensor handle
-  * @retval			boolean
+  * @retval	boolean
   */
 bool attitude_is_right_side_up(const imu_6D_t *imu) {
 	/* Check sign of accel vector z component */
@@ -287,7 +324,7 @@ bool attitude_is_right_side_up(const imu_6D_t *imu) {
   * @brief determines if quad-copter attitude is within limits
   *
   * @param  est		read-only pointer to attitude handle
-  * @retval			boolean
+  * @retval	boolean
   */
 bool attitude_within_limits(const attitude_est_t *est) {
 	/* Check roll & pitch angles are within tolerance */
