@@ -72,7 +72,7 @@ void pid_init(pid_ctrl_t *ctrl, const pid_config_t *config) {
 	ctrl->Kd = config->Kd;
 	ctrl->limit = config->limit;
 	ctrl->integrator_limit = config->integrator_limit;
-	ctrl->tau = RAD_PER_SEC_TO_INTERVAL(config->Wc);
+	ctrl->tau = RAD_PER_SEC_TO_INTERVAL(HZ_TO_RAD_PER_SEC(config->Wc));
 
 	ctrl->prev_error = 0.0f;
 	ctrl->prev_measurement = 0.0f;
