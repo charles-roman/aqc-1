@@ -119,10 +119,10 @@
 #define ESC_PWM_PROTOCOL_ID							0U
 #define CONFIG_ESC_PROTOCOL							ESC_PWM_PROTOCOL_ID
 
-// MOTOR COMMANDS-------------------------------------------------------------
-#define CONFIG_MTR_CMD_IDLE_PCT						18.0f
-#define CONFIG_MTR_CMD_LIFTOFF_PCT					24.0f
-#define CONFIG_MTR_CMD_LIMIT_PCT					100.0f // Max is 100% (this would unlock full motor potential)
+// COMMANDS-------------------------------------------------------------------
+#define CONFIG_ESC_CMD_IDLE_PCT						18.0f
+#define CONFIG_ESC_CMD_LIFTOFF_PCT					24.0f
+#define CONFIG_ESC_CMD_LIMIT_PCT					100.0f // Max is 100% (this would unlock full motor potential)
 
 /*
  * On Full Charged Battery
