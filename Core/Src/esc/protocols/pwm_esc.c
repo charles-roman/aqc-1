@@ -27,25 +27,18 @@
 /**
   * @brief  ESC Channel -> Timer Aliases
   */
-#define MTR1_PWM_OUT_TIM			TIM4
-#define MTR2_PWM_OUT_TIM			TIM4
-#define MTR3_PWM_OUT_TIM			TIM8
-#define MTR4_PWM_OUT_TIM			TIM8
+#define ESC1_PWM_OUT_TIM			TIM4
+#define ESC2_PWM_OUT_TIM			TIM4
+#define ESC3_PWM_OUT_TIM			TIM8
+#define ESC4_PWM_OUT_TIM			TIM8
 
 /**
   * @brief  ESC Channel -> Timer Channel Aliases
   */
-#define MTR3_PWM_OUT_TIM_CHANNEL	TIM_CHANNEL_1
-#define MTR4_PWM_OUT_TIM_CHANNEL	TIM_CHANNEL_2
-#define MTR2_PWM_OUT_TIM_CHANNEL	TIM_CHANNEL_3
-#define MTR1_PWM_OUT_TIM_CHANNEL	TIM_CHANNEL_4
-
-/**
-  * @brief  Motor Command Settings
-  */
-#define MTR_CMD_IDLE_PCT			CONFIG_MTR_CMD_IDLE_PCT
-#define MTR_CMD_LIFTOFF_PCT			CONFIG_MTR_CMD_LIFTOFF_PCT
-#define MTR_CMD_LIMIT_PCT			CONFIG_MTR_CMD_LIMIT_PCT
+#define ESC3_PWM_OUT_TIM_CHANNEL	TIM_CHANNEL_1
+#define ESC4_PWM_OUT_TIM_CHANNEL	TIM_CHANNEL_2
+#define ESC2_PWM_OUT_TIM_CHANNEL	TIM_CHANNEL_3
+#define ESC1_PWM_OUT_TIM_CHANNEL	TIM_CHANNEL_4
 
 /**
   * @brief  ESC Status Type Aliases
@@ -60,32 +53,15 @@ typedef esc_status_t pwm_esc_status_t;
   * @brief  Timer Handle Pointers
   * 		NOTE: Adjust based on PWM Output Timer Config!
   */
-static const TIM_HandleTypeDef* phtim_mtr1 = NULL;
-static const TIM_HandleTypeDef* phtim_mtr2 = NULL;
-static const TIM_HandleTypeDef* phtim_mtr3 = NULL;
-static const TIM_HandleTypeDef* phtim_mtr4 = NULL;
+static const TIM_HandleTypeDef* phtim_esc1 = NULL;
+static const TIM_HandleTypeDef* phtim_esc2 = NULL;
+static const TIM_HandleTypeDef* phtim_esc3 = NULL;
+static const TIM_HandleTypeDef* phtim_esc4 = NULL;
 
 /**
   * @brief  PWM Output Timer Clock Reference Freq
   */
 static uint32_t PWM_OUT_TIMxClkRefFreqMHz;
-
-/**
-  * @brief  Motor Command Properties
-  */
-static uint32_t MTR_CMD_MIN;
-static uint32_t MTR_CMD_MAX;
-static uint32_t MTR_CMD_IDLE;
-static uint32_t MTR_CMD_LIFTOFF;
-static uint32_t MTR_CMD_LIMIT;
-
-/**
-  * @brief  Motor Commands
-  */
-static uint32_t mtr1_cmd;
-static uint32_t mtr2_cmd;
-static uint32_t mtr3_cmd;
-static uint32_t mtr4_cmd;
 
 
 /**
@@ -119,37 +95,12 @@ static inline HAL_StatusTypeDef PWM_Stop_Channel(TIM_HandleTypeDef *htim, uint32
 }
 
 /**
-  * @brief calculates mtr cmd based on pct
-  *
-  * @param  pct		percentage to set motor command at
-  *
-  * @retval motor command (pwm duty cycle)
-  */
-static inline uint32_t MTR_CMD(float pct) {
-	return (uint32_t) ((MTR_CMD_MAX - MTR_CMD_MIN) * (pct / 100.0f) + MTR_CMD_MIN);
-}
-
-/**
-  * @brief helper function to validate/constrain motor command
-  *
-  * @param  cmd		pointer to motor command
-  * @retval pwm esc status
-  */
-static inline pwm_esc_status_t sanitize_pwm_motor_command(uint32_t *cmd) {
-	if (!inrange_u32(*cmd, MTR_CMD_MIN, MTR_CMD_MAX)) {
-		*cmd = constrain_u32(*cmd, MTR_CMD_IDLE, MTR_CMD_LIMIT); // constrain within mtr cmd range
-		return PWM_ESC_ERROR_WARN;
-	}
-	return PWM_ESC_OK;
-}
-
-/**
   * @brief helper function to get the appropriate timer handle based on hardware config
   *
   * @param  tim		pointer to timer type handle
   * @retval pointer to timer handle type (NULL otherwise)
   */
-static TIM_HandleTypeDef* Get_MTR_PWM_OUT_TIM_Handle(TIM_TypeDef* tim) {
+static TIM_HandleTypeDef* Get_ESC_PWM_OUT_TIM_Handle(const TIM_TypeDef* tim) {
 	#if HTIM4 == CONFIGURED
 	if (tim == TIM4)
 		return &htim4;
@@ -173,48 +124,48 @@ static TIM_HandleTypeDef* Get_MTR_PWM_OUT_TIM_Handle(TIM_TypeDef* tim) {
   * @retval boolean
   */
 static bool valid_pwm_timer_config(void) {
-	uint32_t MTR1_PWM_TIMClkRefFreqHz, \
-			 MTR2_PWM_TIMClkRefFreqHz, \
-			 MTR3_PWM_TIMClkRefFreqHz, \
-			 MTR4_PWM_TIMClkRefFreqHz;
+	uint32_t ESC1_PWM_TIMClkRefFreqHz, \
+			 ESC2_PWM_TIMClkRefFreqHz, \
+			 ESC3_PWM_TIMClkRefFreqHz, \
+			 ESC4_PWM_TIMClkRefFreqHz;
 
-	uint32_t MTR1_PWM_TIM_CLK_ARR, \
-			 MTR2_PWM_TIM_CLK_ARR, \
-			 MTR3_PWM_TIM_CLK_ARR, \
-			 MTR4_PWM_TIM_CLK_ARR;
+	uint32_t ESC1_PWM_TIM_CLK_ARR, \
+			 ESC2_PWM_TIM_CLK_ARR, \
+			 ESC3_PWM_TIM_CLK_ARR, \
+			 ESC4_PWM_TIM_CLK_ARR;
 
 	float PWM_OUT_FREQ_HZ;
 
 	/* Validate pwm timer clock reference freqs */
-	MTR1_PWM_TIMClkRefFreqHz = Get_TIMxClkRefFreqHz(phtim_mtr1);
-	MTR2_PWM_TIMClkRefFreqHz = Get_TIMxClkRefFreqHz(phtim_mtr2);
-	MTR3_PWM_TIMClkRefFreqHz = Get_TIMxClkRefFreqHz(phtim_mtr3);
-	MTR4_PWM_TIMClkRefFreqHz = Get_TIMxClkRefFreqHz(phtim_mtr4);
+	ESC1_PWM_TIMClkRefFreqHz = Get_TIMxClkRefFreqHz(phtim_esc1);
+	ESC2_PWM_TIMClkRefFreqHz = Get_TIMxClkRefFreqHz(phtim_esc2);
+	ESC3_PWM_TIMClkRefFreqHz = Get_TIMxClkRefFreqHz(phtim_esc3);
+	ESC4_PWM_TIMClkRefFreqHz = Get_TIMxClkRefFreqHz(phtim_esc4);
 
-	if (!all_equal_u32(MTR1_PWM_TIMClkRefFreqHz, \
-				   	   MTR2_PWM_TIMClkRefFreqHz, \
-					   MTR3_PWM_TIMClkRefFreqHz, \
-					   MTR4_PWM_TIMClkRefFreqHz)) {
+	if (!all_equal_u32(ESC1_PWM_TIMClkRefFreqHz, \
+				   	   ESC2_PWM_TIMClkRefFreqHz, \
+					   ESC3_PWM_TIMClkRefFreqHz, \
+					   ESC4_PWM_TIMClkRefFreqHz)) {
 		return false;
 	}
 
 	/* Validate pwm timer clock ARRs */
-	MTR1_PWM_TIM_CLK_ARR = phtim_mtr1->Init.Period;
-	MTR2_PWM_TIM_CLK_ARR = phtim_mtr2->Init.Period;
-	MTR3_PWM_TIM_CLK_ARR = phtim_mtr3->Init.Period;
-	MTR4_PWM_TIM_CLK_ARR = phtim_mtr4->Init.Period;
+	ESC1_PWM_TIM_CLK_ARR = phtim_esc1->Init.Period;
+	ESC2_PWM_TIM_CLK_ARR = phtim_esc2->Init.Period;
+	ESC3_PWM_TIM_CLK_ARR = phtim_esc3->Init.Period;
+	ESC4_PWM_TIM_CLK_ARR = phtim_esc4->Init.Period;
 
-	if (!all_equal_u32(MTR1_PWM_TIM_CLK_ARR, \
-				   	   MTR2_PWM_TIM_CLK_ARR, \
-					   MTR3_PWM_TIM_CLK_ARR, \
-					   MTR4_PWM_TIM_CLK_ARR)) {
+	if (!all_equal_u32(ESC1_PWM_TIM_CLK_ARR, \
+				   	   ESC2_PWM_TIM_CLK_ARR, \
+					   ESC3_PWM_TIM_CLK_ARR, \
+					   ESC4_PWM_TIM_CLK_ARR)) {
 		return false;
 	}
 
 	// NOTE: Might also want to validate polarity, mode, etc.
 
 	/* Validate pwm output freq */
-	PWM_OUT_FREQ_HZ = (float) MTR1_PWM_TIMClkRefFreqHz / MTR1_PWM_TIM_CLK_ARR;
+	PWM_OUT_FREQ_HZ = (float) ESC1_PWM_TIMClkRefFreqHz / ESC1_PWM_TIM_CLK_ARR;
 
 	if (HZ_TO_INTERVAL_US(PWM_OUT_FREQ_HZ) < (float) PWM_PULSE_VALID_MAX_US) {
 		return false;
@@ -226,23 +177,26 @@ static bool valid_pwm_timer_config(void) {
 /**
   * @brief init pwm protocol config properties
   *
-  * @retval None
+  * @param	esc_cmd_min		pointer to minimum esc command
+  * @param 	esc_cmd_max		pointer to maximum esc command
+  *
+  * @retval pwm esc status
   */
-static pwm_esc_status_t pwm_esc_init(void) {
-	phtim_mtr1 = Get_MTR_PWM_OUT_TIM_Handle(MTR1_PWM_OUT_TIM);
-	if (phtim_mtr1 == NULL)
+static pwm_esc_status_t pwm_esc_init(uint32_t *esc_cmd_min, uint32_t *esc_cmd_max) {
+	phtim_esc1 = Get_ESC_PWM_OUT_TIM_Handle(ESC1_PWM_OUT_TIM);
+	if (phtim_esc1 == NULL)
 		return PWM_ESC_ERROR_FATAL;
 
-	phtim_mtr2 = Get_MTR_PWM_OUT_TIM_Handle(MTR2_PWM_OUT_TIM);
-	if (phtim_mtr2 == NULL)
+	phtim_esc2 = Get_ESC_PWM_OUT_TIM_Handle(ESC2_PWM_OUT_TIM);
+	if (phtim_esc2 == NULL)
 		return PWM_ESC_ERROR_FATAL;
 
-	phtim_mtr3 = Get_MTR_PWM_OUT_TIM_Handle(MTR3_PWM_OUT_TIM);
-	if (phtim_mtr3 == NULL)
+	phtim_esc3 = Get_ESC_PWM_OUT_TIM_Handle(ESC3_PWM_OUT_TIM);
+	if (phtim_esc3 == NULL)
 		return PWM_ESC_ERROR_FATAL;
 
-	phtim_mtr4 = Get_MTR_PWM_OUT_TIM_Handle(MTR4_PWM_OUT_TIM);
-	if (phtim_mtr4 == NULL)
+	phtim_esc4 = Get_ESC_PWM_OUT_TIM_Handle(ESC4_PWM_OUT_TIM);
+	if (phtim_esc4 == NULL)
 		return PWM_ESC_ERROR_FATAL;
 
 	/* Validate pwm output timer config(s) */
@@ -250,31 +204,13 @@ static pwm_esc_status_t pwm_esc_init(void) {
 		return PWM_ESC_ERROR_FATAL;
 
 	/* Init PWM timer config variable(s) */
-	PWM_OUT_TIMxClkRefFreqMHz = Get_TIMxClkRefFreqMHz(phtim_mtr1); // can use any timer handle after validating their config
+	PWM_OUT_TIMxClkRefFreqMHz = Get_TIMxClkRefFreqMHz(phtim_esc1); // can use any timer handle after validating their config
 	if (PWM_OUT_TIMxClkRefFreqMHz == 0)
 		return PWM_ESC_ERROR_FATAL;
 
-	/* Init motor command properties */
-	MTR_CMD_MIN = PWM_OUT_TIMxClkRefFreqMHz * PWM_PULSE_PROTO_MIN_US;	// (3000 => 1ms pulse @ 50Hz => 5% duty cycle)
-	MTR_CMD_MAX = PWM_OUT_TIMxClkRefFreqMHz * PWM_PULSE_PROTO_MAX_US;	// (6000 => 2ms pulse @ 50Hz => 10% duty cycle)
-
-	MTR_CMD_IDLE = MTR_CMD(MTR_CMD_IDLE_PCT);
-	if (!inrange_u32(MTR_CMD_IDLE, MTR_CMD_MIN, MTR_CMD_MAX))
-		return PWM_ESC_ERROR_FATAL;
-
-	MTR_CMD_LIFTOFF = MTR_CMD(MTR_CMD_LIFTOFF_PCT);
-	if (!inrange_u32(MTR_CMD_LIFTOFF, MTR_CMD_MIN, MTR_CMD_MAX))
-		return PWM_ESC_ERROR_FATAL;
-
-	MTR_CMD_LIMIT = MTR_CMD(MTR_CMD_LIMIT_PCT);
-	if (!inrange_u32(MTR_CMD_LIMIT, MTR_CMD_MIN, MTR_CMD_MAX))
-		return PWM_ESC_ERROR_FATAL;
-
-	/* Init motor command variables */
-	mtr1_cmd = MTR_CMD_MIN;
-	mtr2_cmd = MTR_CMD_MIN;
-	mtr3_cmd = MTR_CMD_MIN;
-	mtr4_cmd = MTR_CMD_MIN;
+	/* Init esc command min/max */
+	*esc_cmd_min = PWM_OUT_TIMxClkRefFreqMHz * PWM_PULSE_PROTO_MIN_US;	// (3000 => 1ms pulse @ 50Hz => 5% duty cycle)
+	*esc_cmd_max = PWM_OUT_TIMxClkRefFreqMHz * PWM_PULSE_PROTO_MAX_US;	// (6000 => 2ms pulse @ 50Hz => 10% duty cycle)
 
 	return PWM_ESC_OK;
 }
@@ -282,27 +218,17 @@ static pwm_esc_status_t pwm_esc_init(void) {
 /**
   * @brief deinit pwm protocol config properties
   *
-  * @retval None
+  * @retval pwm esc status
   */
 static pwm_esc_status_t pwm_esc_deinit(void) {
 	/* Reset PWM out timer handle pointers */
-	phtim_mtr1 = NULL;
-	phtim_mtr2 = NULL;
-	phtim_mtr3 = NULL;
-	phtim_mtr4 = NULL;
+	phtim_esc1 = NULL;
+	phtim_esc2 = NULL;
+	phtim_esc3 = NULL;
+	phtim_esc4 = NULL;
+
 	/* Reset cached PWM timer config variable(s) */
 	PWM_OUT_TIMxClkRefFreqMHz = 0U;
-	/* Reset cached motor command properties */
-	MTR_CMD_MIN = 0U;
-	MTR_CMD_MAX = 0U;
-	MTR_CMD_IDLE = 0U;
-	MTR_CMD_LIFTOFF = 0U;
-	MTR_CMD_LIMIT = 0U;
-	/* Set motor command variables to safe state*/
-	mtr1_cmd = MTR_CMD_MIN;
-	mtr2_cmd = MTR_CMD_MIN;
-	mtr3_cmd = MTR_CMD_MIN;
-	mtr4_cmd = MTR_CMD_MIN;
 
 	return PWM_ESC_OK;
 }
@@ -310,26 +236,27 @@ static pwm_esc_status_t pwm_esc_deinit(void) {
 /**
   * @brief starts pwm communication with esc
   *
-  * @retval None
+  * @param	esc_cmd_min		minimum esc command
+  * @retval pwm esc status
   */
-static pwm_esc_status_t pwm_esc_start(void) {
+static pwm_esc_status_t pwm_esc_start(uint32_t esc_cmd_min) {
 	/* Set Minimum Duty Cycle */
-	SET_DUTY_CYCLE(phtim_mtr1, MTR1_PWM_OUT_TIM_CHANNEL, MTR_CMD_MIN);
-	SET_DUTY_CYCLE(phtim_mtr2, MTR2_PWM_OUT_TIM_CHANNEL, MTR_CMD_MIN);
-	SET_DUTY_CYCLE(phtim_mtr3, MTR3_PWM_OUT_TIM_CHANNEL, MTR_CMD_MIN);
-	SET_DUTY_CYCLE(phtim_mtr4, MTR4_PWM_OUT_TIM_CHANNEL, MTR_CMD_MIN);
+	SET_DUTY_CYCLE(phtim_esc1, ESC1_PWM_OUT_TIM_CHANNEL, esc_cmd_min);
+	SET_DUTY_CYCLE(phtim_esc2, ESC2_PWM_OUT_TIM_CHANNEL, esc_cmd_min);
+	SET_DUTY_CYCLE(phtim_esc3, ESC3_PWM_OUT_TIM_CHANNEL, esc_cmd_min);
+	SET_DUTY_CYCLE(phtim_esc4, ESC4_PWM_OUT_TIM_CHANNEL, esc_cmd_min);
 
 	/* Init PWM Output Signals */
-	if (PWM_Start_Channel(phtim_mtr1, MTR1_PWM_OUT_TIM_CHANNEL) != HAL_OK)
+	if (PWM_Start_Channel(phtim_esc1, ESC1_PWM_OUT_TIM_CHANNEL) != HAL_OK)
 		return PWM_ESC_ERROR_FATAL;
 
-	if (PWM_Start_Channel(phtim_mtr2, MTR2_PWM_OUT_TIM_CHANNEL) != HAL_OK)
+	if (PWM_Start_Channel(phtim_esc2, ESC2_PWM_OUT_TIM_CHANNEL) != HAL_OK)
 		return PWM_ESC_ERROR_FATAL;
 
-	if (PWM_Start_Channel(phtim_mtr3, MTR3_PWM_OUT_TIM_CHANNEL) != HAL_OK)
+	if (PWM_Start_Channel(phtim_esc3, ESC3_PWM_OUT_TIM_CHANNEL) != HAL_OK)
 		return PWM_ESC_ERROR_FATAL;
 
-	if (PWM_Start_Channel(phtim_mtr4, MTR4_PWM_OUT_TIM_CHANNEL) != HAL_OK)
+	if (PWM_Start_Channel(phtim_esc4, ESC4_PWM_OUT_TIM_CHANNEL) != HAL_OK)
 		return PWM_ESC_ERROR_FATAL;
 
 	return PWM_ESC_OK;
@@ -339,20 +266,20 @@ static pwm_esc_status_t pwm_esc_start(void) {
 /**
   * @brief stops pwm communication with esc
   *
-  * @retval None
+  * @retval pwm esc status
   */
 static pwm_esc_status_t pwm_esc_stop(void) {
 	/* De-Init PWM Output Signals */
-	if (PWM_Stop_Channel(phtim_mtr1, MTR1_PWM_OUT_TIM_CHANNEL) != HAL_OK)
+	if (PWM_Stop_Channel(phtim_esc1, ESC1_PWM_OUT_TIM_CHANNEL) != HAL_OK)
 		return PWM_ESC_ERROR_FATAL;
 
-	if (PWM_Stop_Channel(phtim_mtr2, MTR2_PWM_OUT_TIM_CHANNEL) != HAL_OK)
+	if (PWM_Stop_Channel(phtim_esc2, ESC2_PWM_OUT_TIM_CHANNEL) != HAL_OK)
 		return PWM_ESC_ERROR_FATAL;
 
-	if (PWM_Stop_Channel(phtim_mtr3, MTR3_PWM_OUT_TIM_CHANNEL) != HAL_OK)
+	if (PWM_Stop_Channel(phtim_esc3, ESC3_PWM_OUT_TIM_CHANNEL) != HAL_OK)
 		return PWM_ESC_ERROR_FATAL;
 
-	if (PWM_Stop_Channel(phtim_mtr4, MTR4_PWM_OUT_TIM_CHANNEL) != HAL_OK)
+	if (PWM_Stop_Channel(phtim_esc4, ESC4_PWM_OUT_TIM_CHANNEL) != HAL_OK)
 		return PWM_ESC_ERROR_FATAL;
 
 	return PWM_ESC_OK;
@@ -361,88 +288,49 @@ static pwm_esc_status_t pwm_esc_stop(void) {
 /**
   * @brief arms esc
   *
+  * @param	esc_cmd_idle	idle esc command
   * @retval None
   */
-static void pwm_esc_arm(void) {
+static void pwm_esc_arm(uint32_t esc_cmd_idle) {
 	/* Enable Motors (Set Low Duty Cycle) */
-	SET_DUTY_CYCLE(phtim_mtr1, MTR1_PWM_OUT_TIM_CHANNEL, MTR_CMD_IDLE);
-	SET_DUTY_CYCLE(phtim_mtr2, MTR2_PWM_OUT_TIM_CHANNEL, MTR_CMD_IDLE);
-	SET_DUTY_CYCLE(phtim_mtr3, MTR3_PWM_OUT_TIM_CHANNEL, MTR_CMD_IDLE);
-	SET_DUTY_CYCLE(phtim_mtr4, MTR4_PWM_OUT_TIM_CHANNEL, MTR_CMD_IDLE);
+	SET_DUTY_CYCLE(phtim_esc1, ESC1_PWM_OUT_TIM_CHANNEL, esc_cmd_idle);
+	SET_DUTY_CYCLE(phtim_esc2, ESC2_PWM_OUT_TIM_CHANNEL, esc_cmd_idle);
+	SET_DUTY_CYCLE(phtim_esc3, ESC3_PWM_OUT_TIM_CHANNEL, esc_cmd_idle);
+	SET_DUTY_CYCLE(phtim_esc4, ESC4_PWM_OUT_TIM_CHANNEL, esc_cmd_idle);
 }
 
 /**
   * @brief disarms esc
   *
+  * @param	esc_cmd_min		minimum esc command
   * @retval None
   */
-static void pwm_esc_disarm(void) {
+static void pwm_esc_disarm(uint32_t esc_cmd_min) {
 	/* Disable Motors (Set Minimum Duty Cycle) */
-	SET_DUTY_CYCLE(phtim_mtr1, MTR1_PWM_OUT_TIM_CHANNEL, MTR_CMD_MIN);
-	SET_DUTY_CYCLE(phtim_mtr2, MTR2_PWM_OUT_TIM_CHANNEL, MTR_CMD_MIN);
-	SET_DUTY_CYCLE(phtim_mtr3, MTR3_PWM_OUT_TIM_CHANNEL, MTR_CMD_MIN);
-	SET_DUTY_CYCLE(phtim_mtr4, MTR4_PWM_OUT_TIM_CHANNEL, MTR_CMD_MIN);
-}
-
-/**
-  * @brief check if esc is armed
-  *
-  * @param	cmd		pointer to mtr_cmds handle
-  * @retval boolean
-  */
-static bool pwm_esc_is_armed(void) {
-	if (mtr1_cmd >= MTR_CMD_IDLE)
-		return true;
-
-	if (mtr2_cmd >= MTR_CMD_IDLE)
-		return true;
-
-	if (mtr3_cmd >= MTR_CMD_IDLE)
-		return true;
-
-	if (mtr4_cmd >= MTR_CMD_IDLE)
-		return true;
-
-	return false;
+	SET_DUTY_CYCLE(phtim_esc1, ESC1_PWM_OUT_TIM_CHANNEL, esc_cmd_min);
+	SET_DUTY_CYCLE(phtim_esc2, ESC2_PWM_OUT_TIM_CHANNEL, esc_cmd_min);
+	SET_DUTY_CYCLE(phtim_esc3, ESC3_PWM_OUT_TIM_CHANNEL, esc_cmd_min);
+	SET_DUTY_CYCLE(phtim_esc4, ESC4_PWM_OUT_TIM_CHANNEL, esc_cmd_min);
 }
 
 /**
   * @brief set duty cycle for pwm signals to ESCs
   *
-  * @param  cmd		pointer to mtr_cmds handle
-  * @retval None
+  * @param  cmd		pointer to esc commands handle
+  * @retval pwm esc status
   */
-static pwm_esc_status_t pwm_esc_set_motor_commands(const mtr_cmds_t *cmd) {
-	pwm_esc_status_t status = PWM_ESC_OK;
-	mtr1_cmd = (uint32_t) cmd->mtr1;
-	mtr2_cmd = (uint32_t) cmd->mtr2;
-	mtr3_cmd = (uint32_t) cmd->mtr3;
-	mtr4_cmd = (uint32_t) cmd->mtr4;
-
-	/* Validate Motor Commands */
-	if (sanitize_pwm_motor_command(&mtr1_cmd) != PWM_ESC_OK)
-		status = PWM_ESC_ERROR_WARN;
-
-	if (sanitize_pwm_motor_command(&mtr2_cmd) != PWM_ESC_OK)
-		status = PWM_ESC_ERROR_WARN;
-
-	if (sanitize_pwm_motor_command(&mtr3_cmd) != PWM_ESC_OK)
-		status = PWM_ESC_ERROR_WARN;
-
-	if (sanitize_pwm_motor_command(&mtr4_cmd) != PWM_ESC_OK)
-		status = PWM_ESC_ERROR_WARN;
-
+static pwm_esc_status_t pwm_esc_set_commands(const esc_cmds_t *cmd) {
 	/* Set Duty Cycle */ // (NOTE: can adjust CCR directly for speed)
-	SET_DUTY_CYCLE(phtim_mtr1, MTR1_PWM_OUT_TIM_CHANNEL, mtr1_cmd);
-	SET_DUTY_CYCLE(phtim_mtr2, MTR2_PWM_OUT_TIM_CHANNEL, mtr2_cmd);
-	SET_DUTY_CYCLE(phtim_mtr3, MTR3_PWM_OUT_TIM_CHANNEL, mtr3_cmd);
-	SET_DUTY_CYCLE(phtim_mtr4, MTR4_PWM_OUT_TIM_CHANNEL, mtr4_cmd);
+	SET_DUTY_CYCLE(phtim_esc1, ESC1_PWM_OUT_TIM_CHANNEL, cmd->esc1);
+	SET_DUTY_CYCLE(phtim_esc2, ESC2_PWM_OUT_TIM_CHANNEL, cmd->esc2);
+	SET_DUTY_CYCLE(phtim_esc3, ESC3_PWM_OUT_TIM_CHANNEL, cmd->esc3);
+	SET_DUTY_CYCLE(phtim_esc4, ESC4_PWM_OUT_TIM_CHANNEL, cmd->esc4);
 
-	return status;
+	return PWM_ESC_OK;
 }
 
 /**
-  * @brief pwm_driver initialization
+  * @brief pwm esc driver initialization
   */
 const esc_protocol_interface_t pwm_esc_driver = {
 	.init = pwm_esc_init,
@@ -451,6 +339,5 @@ const esc_protocol_interface_t pwm_esc_driver = {
 	.stop = pwm_esc_stop,
 	.arm = pwm_esc_arm,
     .disarm = pwm_esc_disarm,
-	.is_armed = pwm_esc_is_armed,
-	.set_motor_commands = pwm_esc_set_motor_commands
+	.set_commands = pwm_esc_set_commands
 };
