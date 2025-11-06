@@ -77,9 +77,9 @@
 #define PID_CONFIG_YAW_RATE					{YAW_RATE_P_GAIN, YAW_RATE_I_GAIN, YAW_RATE_D_GAIN, YAW_RATE_D_LPF_CUTOFF_FREQ_RPS, YAW_RATE_CMD_LIM, YAW_RATE_I_CMD_LIM}
 
 /*
- * @brief Motor Command Settings
+ * @brief ESC Command Settings
  */
-#define MTR_CMD_LIFTOFF_PCT					CONFIG_MTR_CMD_LIFTOFF_PCT
+#define ESC_CMD_LIFTOFF_PCT					CONFIG_ESC_CMD_LIFTOFF_PCT
 
 /*
  * @brief Attitude PID Controllers
@@ -174,7 +174,7 @@ static void flight_mode_switch_check(const rc_reqs_t *req, const attitude_est_t 
   */
 static void integrator_hold_check(float throttle) {
 	static bool prev_integrator_hold = false;
-	bool low_throttle = (throttle < MTR_CMD_LIFTOFF_PCT);
+	bool low_throttle = (throttle < ESC_CMD_LIFTOFF_PCT);
 	bool armed = esc_is_armed();
 	bool integrator_hold =  low_throttle || !armed;
 
