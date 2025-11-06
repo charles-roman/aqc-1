@@ -32,6 +32,7 @@
 #include "common/time.h"
 #include "common/maths.h"
 #include "common/led.h"
+#include "common/settings.h"
 #include "flight/system.h"
 #include "flight/rc_input.h"
 #include "flight/attitude.h"
@@ -116,13 +117,10 @@ int main(void)
 
   static imu_6D_t imu;
   static rc_reqs_t rcReqs;
-  static mtr_cmds_t mtrCmds;
-  attitude_est_t attEst = {0};
-  attitude_cmd_t attCmd = {0};
-  static sensorPackage sensPackage;
-  static systemState sysState = {{.command_limit = ROLL_CMD_LIM, .gains = ROLL_PID, .clamp = 1},
-  	  	  	  	  	  	  	  	 {.command_limit = PITCH_CMD_LIM, .gains = PITCH_PID, .clamp = 1},
-								 {.command_limit = YAW_CMD_LIM, .gains = YAW_PID, .clamp = 1}};
+  attitude_est_t attEst = {0.0};
+  attitude_cmd_t attCmds = {0.0};
+  mtr_cmds_t mtrCmds = {0.0};
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -180,6 +178,9 @@ int main(void)
   /* Initialize Attitude Controller */
   attitude_controller_init();
 
+  /* Initialize Motor Mixer */
+  mixer_init();
+
   /* Start Timer */
   start_timer(&htim6); //general purpose timer
 
@@ -221,10 +222,15 @@ int main(void)
 		attitude_estimator_update(&imu, &attEst);
 
 		/* Update Attitude PID Controllers */
-		attitude_controller_update(&attCmd, &rcReqs, &attEst, imu->dt);
+		attitude_controller_update(&attCmds, &rcReqs, &attEst, imu->dt);
 
-		/* Apply Motor Mixing Algorithm & Set Duty Cycles */
-		actuator_set(&sensPackage, &sysState, &mtrCmds);
+		/* Apply Motor Mixing */
+		mixer_update(&mtrCmds, &attCmds, rcReqs->throttle);
+
+		#if CONFIG_THRUST_COMP == ENABLED
+		/* Apply Thrust Compensation */
+		thrust_compensate(&mtrCmds, &attEst);
+		#endif
 
 		/* Check if Remote Control is Armed */
 		if (rc_is_armed()) {
