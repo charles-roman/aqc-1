@@ -104,10 +104,12 @@
 // PWM------------------------------------------------------------------------
 #define CONFIG_PWM_PULSE_MIN_US 					988U
 #define CONFIG_PWM_PULSE_MAX_US 					2012U
-#define CONFIG_PWM_PULSE_PROTO_MIN_US				1000U
-#define CONFIG_PWM_PULSE_PROTO_MAX_US				2000U
-#define CONFIG_PWM_PULSE_VALID_MIN_US				950U
-#define CONFIG_PWM_PULSE_VALID_MAX_US				2050U
+#define PWM_PULSE_MED_US							(CONFIG_PWM_PULSE_MIN_US + CONFIG_PWM_PULSE_MAX_US) / 2
+
+#define PWM_PULSE_PROTO_MIN_US						1000U
+#define PWM_PULSE_PROTO_MAX_US						2000U
+#define PWM_PULSE_VALID_MIN_US						950U
+#define PWM_PULSE_VALID_MAX_US						2050U
 
 /* RX CONFIG SETTINGS--------------------------------------------------------------
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
