@@ -11,4 +11,4 @@
 #include "rx/rx.h"
 
 /* External variables --------------------------------------------------------*/
-extern const esc_protocol_interface_t pwm_rx_driver;
+extern const rx_protocol_interface_t pwm_rx_driver;

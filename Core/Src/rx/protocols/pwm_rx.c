@@ -19,10 +19,6 @@
   */
 #define PWM_PULSE_MIN_US    			CONFIG_PWM_PULSE_MIN_US
 #define PWM_PULSE_MAX_US    			CONFIG_PWM_PULSE_MAX_US
-#define PWM_PULSE_PROTO_MIN_US			CONFIG_PWM_PULSE_PROTO_MIN_US
-#define PWM_PULSE_PROTO_MAX_US			CONFIG_PWM_PULSE_PROTO_MAX_US
-#define PWM_PULSE_VALID_MIN_US 			CONFIG_PWM_PULSE_VALID_MIN_US
-#define PWM_PULSE_VALID_MAX_US			CONFIG_PWM_PULSE_VALID_MAX_US
 
 /**
   * @brief  Rx Channel -> Timer Aliases
@@ -84,6 +80,7 @@ typedef enum {
 typedef struct pulse {
 	bool is_rising;
 	bool is_updated;
+	uint32_t width_us;
 	uint32_t ic_val_r;
 	uint32_t ic_val_f;
 } pulse_t;
@@ -99,10 +96,10 @@ typedef enum {
 /**
   * @brief  Pulse Handles and Level Variables
   */
-static volatile pulse_t rx_ch1_pulse = {.is_rising = true, .is_updated = false};
-static volatile pulse_t rx_ch2_pulse = {.is_rising = true, .is_updated = false};
-static volatile pulse_t rx_ch3_pulse = {.is_rising = true, .is_updated = false};
-static volatile pulse_t rx_ch4_pulse = {.is_rising = true, .is_updated = false};
+static volatile pulse_t rx_ch1_pulse = {.is_rising = true, .is_updated = false, .width_us = PWM_PULSE_MED_US};	// Need a more secure method for pulse width initialization
+static volatile pulse_t rx_ch2_pulse = {.is_rising = true, .is_updated = false, .width_us = PWM_PULSE_MED_US};
+static volatile pulse_t rx_ch3_pulse = {.is_rising = true, .is_updated = false, .width_us = PWM_PULSE_MIN_US};
+static volatile pulse_t rx_ch4_pulse = {.is_rising = true, .is_updated = false, .width_us = PWM_PULSE_MED_US};
 
 static volatile level_t rx_ch5_level = SIGNAL_LOW;
 static volatile level_t rx_ch6_level = SIGNAL_LOW;
@@ -155,9 +152,9 @@ static inline HAL_StatusTypeDef IC_Stop_Channel_IT(TIM_HandleTypeDef *htim, uint
   * @brief helper function to get the appropriate timer handle based on hardware config
   *
   * @param  tim		pointer to timer type handle
-  * @retval pointer to timer handle type (NULL otherwise)
+  * @retval pointer to timer handle (NULL otherwise)
   */
-static TIM_HandleTypeDef* Get_Rx_Channel_IC_TIM_Handle(TIM_TypeDef* tim) {
+static TIM_HandleTypeDef* Get_Rx_Channel_IC_TIM_Handle(const TIM_TypeDef* tim) {
 	#if HTIM2 == CONFIGURED
 	if (tim == TIM2)
 		return &htim2;
@@ -274,22 +271,22 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
   * @retval None
   */
 static void get_pulse_width(pulse_t *pul, uint32_t *val) {
-	uint32_t ic_diff, pulsewidth_us;
+	uint32_t ic_diff;
 
 	/* Check if Pulse is Updated */
 	if (!pul->is_updated) {	// Note: if pulse is always "updated," this can cause a silent error
-		*val = 0; // 0 signifies no change
+		*val = pul->width_us;
 		return;
 	}
 
 	/* Calculate Difference Between Capture Compare Values for Rising and Falling Edges */
 	ic_diff = (pul->ic_val_f > pul->ic_val_r) ? pul->ic_val_f - pul->ic_val_r
 											  : (IC_TIMx_REF_ARR - pul->ic_val_r) + pul->ic_val_f; // overflow protection
-	/* Calculate Pulse Width */
-	pulsewidth_us = ic_diff / IC_TIMxClkRefFreqMHz; // NOTE: this division loses precision unless IC_TIMxClkRefFreqMHz = 1 \
+	/* Calculate Pulse Width (in us) */
+	pul->width_us = ic_diff / IC_TIMxClkRefFreqMHz; // NOTE: this division loses precision unless IC_TIMxClkRefFreqMHz = 1 \
 															  or one operand is converted to a floating-point number
 	/* Store in buffer */
-	*val = pulsewidth_us;
+	*val = pul->width_us;
 
 	/* Reset Pulse Update Flag */
 	pul->is_updated = false;
@@ -368,7 +365,7 @@ static void reset_pulse(pulse_t *pul) {
 /**
   * @brief init pwm_rx protocol config properties
   *
-  * @retval None
+  * @retval pwm rx status
   */
 static pwm_rx_status_t pwm_rx_init(void) {
 	phtim_rx_ch1 = Get_Rx_Channel_IC_TIM_Handle(RX_CH1_IC_TIM);
@@ -404,7 +401,7 @@ static pwm_rx_status_t pwm_rx_init(void) {
 /**
   * @brief deinit pwm_rx protocol config properties
   *
-  * @retval None
+  * @retval pwm rx status
   */
 static pwm_rx_status_t pwm_rx_deinit(void) {
 	/* Reset cached IC timer handles */
@@ -430,7 +427,7 @@ static pwm_rx_status_t pwm_rx_deinit(void) {
 /**
   * @brief enable rx pwm signal capture
   *
-  * @retval rx status
+  * @retval pwm rx status
   */
 static pwm_rx_status_t pwm_rx_start(void) {
 	/* Start Input Capture Interrupts */
@@ -452,7 +449,7 @@ static pwm_rx_status_t pwm_rx_start(void) {
 /**
   * @brief disable rx pwm signal capture
   *
-  * @retval rx status
+  * @retval pwm rx status
   */
 static pwm_rx_status_t pwm_rx_stop(void) {
 	/* Stop Input Capture Interrupts */
@@ -482,19 +479,19 @@ static uint32_t pwm_rx_get_channel(const uint8_t ch) {
 
 	switch (ch) {
 		case RX_CH1:
-			get_pulse_width(&rx_ch1_pulse, *ret);
+			get_pulse_width(&rx_ch1_pulse, &ret);
 			break;
 
 		case RX_CH2:
-			get_pulse_width(&rx_ch2_pulse, *ret);
+			get_pulse_width(&rx_ch2_pulse, &ret);
 			break;
 
 		case RX_CH3:
-			get_pulse_width(&rx_ch3_pulse, *ret);
+			get_pulse_width(&rx_ch3_pulse, &ret);
 			break;
 
 		case RX_CH4:
-			get_pulse_width(&rx_ch4_pulse, *ret);
+			get_pulse_width(&rx_ch4_pulse, &ret);
 			break;
 
 		case RX_CH5:
@@ -513,6 +510,9 @@ static uint32_t pwm_rx_get_channel(const uint8_t ch) {
 	return ret;
 }
 
+/**
+  * @brief pwm rx driver initialization
+  */
 const rx_protocol_interface_t pwm_rx_driver = {
 		.init = pwm_rx_init,
 		.deinit = pwm_rx_deinit,
