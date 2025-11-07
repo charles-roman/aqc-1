@@ -50,6 +50,6 @@ attitude_status_t attitude_controller_update(attitude_cmd_t *cmd, const rc_reqs_
 
 void attitude_controller_init(void);
 
-bool attitude_is_right_side_up(const imu_6D_t *imu);
+bool attitude_is_right_side_up(float accel_z);
 
 bool attitude_within_limits(const attitude_est_t *est);
