@@ -5,75 +5,88 @@
  *      Author: charlieroman
  */
 
-#include "common/time.h"
 #include "common/led.h"
-#include "main.h"
+#include "common/time.h"
 #include "common/maths.h"
+#include "common/hardware.h"
 
 /*
- * @brief blink led at a specified frequency (Hz)
- * (must be called within a loop)
+ * @brief turn led on
  *
- * @param  hz		frequency to blink led
  * @retval None
  */
-void blink_led(uint16_t hz)
-{
-	uint32_t time, interval_us;
-	static uint32_t prev_time;
+void led_on(void) {
+	HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
+}
 
-	time = get_timestamp();
-	interval_us = time - prev_time;
-
-	if (interval_us > HZ_TO_INTERVAL_US(hz))
-	{
-		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-		prev_time = time;
-	}
-
+/*
+ * @brief turn led off
+ *
+ * @retval None
+ */
+void led_off(void) {
+	HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
 }
 
 /*
  * @brief toggle led (on/off)
  *
- * @param  request	on/off request
  * @retval None
  */
-void toggle_led(uint8_t request)
-{
-	uint8_t led_request, led_status;
-	led_request = request;
-	led_status = HAL_GPIO_ReadPin(LED_GPIO_Port, LED_Pin);
+void led_toggle(void) {
+	HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+}
 
-	if (led_request != led_status)
-	{
-		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+/*
+ * @brief blink led at a specified frequency (0 - 1000Hz)
+ * 		  (must be called within a loop)
+ *
+ * @param  hz		frequency to blink led (hz)
+ * @retval None
+ */
+void led_blink(uint16_t hz) {
+	uint32_t now, dt_ms, period_ms;
+	static uint32_t last_tick;
+
+	/* Constrain Input */
+	if (hz > 1000U)
+		hz = 1000U;
+
+	/* Get Elapsed Time Interval */
+	now = millis();
+	dt_ms = now - last_tick;
+	period_ms = HZ_TO_INTERVAL_MS(hz);
+
+	/* Toggle LED (if time) */
+	if (dt_ms >= period_ms / 2) {
+		led_toggle();
+		last_tick = now;
 	}
+
 }
 
 /*
  * @brief set led status (controls led blink frequency)
  *
- * @param  status	ready, waiting, or error status
+ * @param  status	led status type
  * @retval None
  */
-void led_status(uint8_t status)
-{
+void led_set_status(led_status_t status) {
 	switch(status) {
-		case READY:
-			toggle_led(ON); //solid for ready
+		case LED_READY:
+			led_on(); 		// solid for ready
 			break;
 
-		case ERROR:
-			blink_led(1); 	//1 Hz for error
+		case LED_ERROR:
+			led_blink(1); 	// 1 Hz for error
 			break;
 
-		case WAITING:
-			blink_led(5); 	//5 Hz for waiting
+		case LED_WAITING:
+			led_blink(5); 	// 5 Hz for waiting
 			break;
 
 		default:
-			toggle_led(OFF);
+			led_off();
 			break;
 	}
 }

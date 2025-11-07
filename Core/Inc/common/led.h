@@ -7,30 +7,28 @@
 
 #pragma once
 
-//#ifndef SRC_LED_H_
-//#define SRC_LED_H_
-//#endif /* SRC_LED_H_ */
-
 /* Includes ------------------------------------------------------------------*/
 #include <stdint.h>
 
 /* Exported types ------------------------------------------------------------*/
-typedef enum
-{
-  READY = 0U,
-  ERROR_ = !READY,
-  WAITING = 2U
-} LedCode;
+typedef enum {
+  LED_READY = 0U,
+  LED_ERROR = 1U,
+  LED_WAITING = 2U
+} led_status_t;
 
-typedef enum
-{
-  OFF = 0U,
-  ON = !OFF
-} LedStatus;
+typedef enum {
+  LED_OFF = 0U,
+  LED_ON = !LED_OFF
+} led_state_t;
 
 /* Exported functions prototypes ---------------------------------------------*/
-void blink_led(uint16_t hz);
+void led_on(void);
 
-void toggle_led(uint8_t request);
+void led_off(void);
 
-void led_status(uint8_t request);
+void led_toggle(void);
+
+void led_blink(uint16_t hz);
+
+void led_set_status(led_status_t status);
