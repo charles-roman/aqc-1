@@ -93,10 +93,10 @@
 #define CONFIG_IMU_COMM_PROTOCOL					IMU_I2C_PROTOCOL_ID
 
 #define CONFIG_GY_LPF								DISABLED
-#define CONFIG_GY_LPF_CUTOFF_FREQ_RPS 				2 * PI * 500.0f
+#define CONFIG_GY_LPF_CUTOFF_FREQ_HZ 				500.0f
 
 #define CONFIG_XL_LPF								DISABLED
-#define CONFIG_XL_LPF_CUTOFF_FREQ_RPS 				2 * PI * 40.0f
+#define CONFIG_XL_LPF_CUTOFF_FREQ_HZ 				40.0f
 
 /* PROTOCOL CONFIG SETTINGS--------------------------------------------------------
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
