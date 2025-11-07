@@ -19,10 +19,6 @@
   */
 #define PWM_PULSE_MIN_US 			CONFIG_PWM_PULSE_MIN_US
 #define PWM_PULSE_MAX_US 			CONFIG_PWM_PULSE_MAX_US
-#define PWM_PULSE_PROTO_MIN_US 		CONFIG_PWM_PULSE_PROTO_MIN_US
-#define PWM_PULSE_PROTO_MAX_US 		CONFIG_PWM_PULSE_PROTO_MAX_US
-#define PWM_PULSE_VALID_MIN_US 		CONFIG_PWM_PULSE_VALID_MIN_US
-#define PWM_PULSE_VALID_MAX_US		CONFIG_PWM_PULSE_VALID_MAX_US
 
 /**
   * @brief  ESC Channel -> Timer Aliases
@@ -319,14 +315,12 @@ static void pwm_esc_disarm(uint32_t esc_cmd_min) {
   * @param  cmd		pointer to esc commands handle
   * @retval pwm esc status
   */
-static pwm_esc_status_t pwm_esc_set_commands(const esc_cmds_t *cmd) {
+static void pwm_esc_set_commands(const esc_cmds_t *cmd) {
 	/* Set Duty Cycle */ // (NOTE: can adjust CCR directly for speed)
 	SET_DUTY_CYCLE(phtim_esc1, ESC1_PWM_OUT_TIM_CHANNEL, cmd->esc1);
 	SET_DUTY_CYCLE(phtim_esc2, ESC2_PWM_OUT_TIM_CHANNEL, cmd->esc2);
 	SET_DUTY_CYCLE(phtim_esc3, ESC3_PWM_OUT_TIM_CHANNEL, cmd->esc3);
 	SET_DUTY_CYCLE(phtim_esc4, ESC4_PWM_OUT_TIM_CHANNEL, cmd->esc4);
-
-	return PWM_ESC_OK;
 }
 
 /**
