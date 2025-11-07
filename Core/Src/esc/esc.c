@@ -5,6 +5,7 @@
  *      Author: charlieroman
  */
 
+#include <stddef.h>
 #include "esc/esc.h"
 #include "esc/protocols/pwm_esc.h"
 #include "common/maths.h"
@@ -78,7 +79,7 @@ static inline esc_status_t sanitize_esc_command(uint32_t *cmd) {
   * @param  driver	pointer to esc driver
   * @retval boolean
   */
-static bool valid_esc_driver(esc_protocol_interface_t *driver) {
+static bool valid_esc_driver(const esc_protocol_interface_t *driver) {
 	return (driver &&
 			driver->init &&
 		    driver->deinit &&
@@ -187,11 +188,13 @@ esc_status_t esc_stop(void) {
   *
   * @retval None
   */
-void esc_arm(void) {
+esc_status_t esc_arm(void) {
 	if (!esc_driver)
 		return ESC_ERROR_FATAL;
 
 	esc_driver->arm(cmd_props.idle);
+
+	return ESC_OK;
 }
 
 /**
@@ -199,11 +202,13 @@ void esc_arm(void) {
   *
   * @retval None
   */
-void esc_disarm(void) {
+esc_status_t esc_disarm(void) {
 	if (!esc_driver)
 		return ESC_ERROR_FATAL;
 
 	esc_driver->disarm(cmd_props.min);
+
+	return ESC_OK;
 }
 
 /**
@@ -258,5 +263,7 @@ esc_status_t esc_set_motor_commands(const mtr_cmds_t *mcmd) {
 	if (!esc_driver)
 		return ESC_ERROR_FATAL;
 
-	return esc_driver->set_commands(cmd);
+	esc_driver->set_commands(&cmd);
+
+	return status;
 }

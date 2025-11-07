@@ -9,6 +9,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include <stdint.h>
+#include <stdbool.h>
 
 /* Exported types ------------------------------------------------------------*/
 typedef struct {
@@ -38,7 +39,7 @@ typedef struct {
 	esc_status_t (*stop)(void);
     void (*arm)(uint32_t);
     void (*disarm)(uint32_t);
-    esc_status_t (*set_commands)(const esc_cmds_t*);
+    void (*set_commands)(const esc_cmds_t*);
 } esc_protocol_interface_t;
 
 typedef struct {
@@ -58,9 +59,9 @@ esc_status_t esc_start(void);
 
 esc_status_t esc_stop(void);
 
-void esc_arm(void);
+esc_status_t esc_arm(void);
 
-void esc_disarm(void);
+esc_status_t esc_disarm(void);
 
 bool esc_is_armed(void);
 
