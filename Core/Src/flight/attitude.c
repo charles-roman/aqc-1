@@ -312,12 +312,12 @@ void attitude_controller_init(void) {
 /**
   * @brief determines if quad-copter is right side up
   *
-  * @param  imu		read-only pointer to imu 6d sensor handle
+  * @param  accel_z		z-component of accel vector
   * @retval	boolean
   */
-bool attitude_is_right_side_up(const imu_6D_t *imu) {
+bool attitude_is_right_side_up(float accel_z) {
 	/* Check sign of accel vector z component */
-	return SIGN(imu->accel_z) == POSITIVE;
+	return SIGN(accel_z) == POSITIVE;
 }
 
 /**
