@@ -25,6 +25,7 @@
 /* USER CODE BEGIN Includes */
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <string.h>
 #include <math.h>
 #include "usbd_cdc_if.h"
@@ -33,12 +34,11 @@
 #include "common/maths.h"
 #include "common/led.h"
 #include "common/settings.h"
-#include "flight/system.h"
+#include "system/system.h"
 #include "flight/rc_input.h"
 #include "flight/attitude.h"
 #include "flight/pid.h"
 #include "flight/mixer.h"
-#include "setup/setup.h"
 #include "sensors/imu/imu.h"
 #include "rx/rx.h"
 #include "esc/esc.h"
@@ -108,7 +108,7 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
   /* Declare or Initialize Private Variables */
-  uint8_t ready;
+  bool arm_reset = true;
   rx_status_t rx_status;
   esc_status_t esc_status;
   imu_status_t imu_status;
@@ -184,27 +184,8 @@ int main(void)
   /* Start Timer */
   start_timer(&htim6); //general purpose timer
 
-  /* Check for arm request from user */
-  while (!is_armed(ARM_GPIO_Port, ARM_Pin)) {
-	  led_status(WAITING);
-  }
-
-  /* Startup Safety Check */
-  ready = ready_to_fly(&sensPackage.imu, &sysState);
-
-  if (ready)
-  {
-	  /* Signal Flight Ready Status with LED */
-	  led_status(READY);
-
-	  /* Arm ESC (Set Motor Speeds to Idle) */
-	  esc_arm();
-  }
-  else if (!ready)
-  {
-	  /* Signal Error Status with LED if Initialization Fails */
-	  led_status(ERROR);
-  }
+  /* Signal Flight Ready Status with LED */
+  led_status(READY);
 
   /* USER CODE END 2 */
 
@@ -234,14 +215,24 @@ int main(void)
 
 		/* Check if Remote Control is Armed */
 		if (rc_is_armed()) {
-			/* Re-arm ESC (if not already) */
-			if (!esc_is_armed()) {
-				led_status(READY); // Signal Ready Status with LED
-				esc_arm();
-
-			} else {
-				/* Set Motor Commands */
+			/* Set Motor Commands */
+			if (esc_is_armed()) {
 				esc_status = esc_set_motor_commands(&mtrCmds);
+
+			/* Arm ESC (if ready) */
+			} else {
+				/* Check if Ready to Fly */
+				if (ready_to_fly(imu->accel_z, &attEst, rcReqs->throttle)) {
+					led_status(READY);
+
+					/* Check if Arm Switch was Reset */
+					if (arm_reset)
+						esc_arm();
+
+				} else {
+					led_status(WAITING);
+					arm_reset = false;
+				}
 			}
 
 		} else {
@@ -249,7 +240,8 @@ int main(void)
 			if (esc_is_armed())
 				esc_disarm();
 
-			led_status(WAITING); // Signal Waiting Status with LED
+			led_status(WAITING);
+			arm_reset = true;
 		}
 
 		/* Write to SD Card */
