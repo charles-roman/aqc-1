@@ -13,7 +13,7 @@
  * @param  htim       pointer to HAL timer handle
  * @retval freq (hz); 0 if invalid
  */
-uint32_t Get_TIMxClkRefFreqHz(TIM_HandleTypeDef *htim) {
+uint32_t Get_TIMxClkRefFreqHz(const TIM_HandleTypeDef *htim) {
 	uint32_t APB_PCLK_FREQ_HZ, APB_TIMCLK_FREQ_HZ, PSC, TIMx_ClkRefFreqHz;
 
 	if (htim == NULL)
@@ -29,8 +29,7 @@ uint32_t Get_TIMxClkRefFreqHz(TIM_HandleTypeDef *htim) {
 
 	} else if ((htim->Instance == TIM2) ||
 			   (htim->Instance == TIM3) ||
-			   (htim->Instance == TIM4) ||
-			   (htim->Instance == TIM6)) {
+			   (htim->Instance == TIM4)) {
 		/* Get APB1 Clock Freq */
 		APB_PCLK_FREQ_HZ = HAL_RCC_GetPCLK1Freq();
 
@@ -62,7 +61,7 @@ uint32_t Get_TIMxClkRefFreqHz(TIM_HandleTypeDef *htim) {
  * @param  htim       pointer to HAL timer handle
  * @retval freq (mhz); 0 if unable to be calculated in mhz as an integral type
  */
-uint32_t Get_TIMxClkRefFreqMHz(TIM_HandleTypeDef *htim) {
+uint32_t Get_TIMxClkRefFreqMHz(const TIM_HandleTypeDef *htim) {
 	const uint32_t ONE_MILLION = 1000000U;
 
 	/* Get Timer Clock Reference Freq in Hz */
@@ -103,7 +102,7 @@ void stop_timer(TIM_HandleTypeDef *htim) {
  * @param  ms       delay in ms
  * @retval None
  */
-void delay(uint32_t ms) {
+void delay_ms(uint32_t ms) {
   HAL_Delay(ms);
 }
 
