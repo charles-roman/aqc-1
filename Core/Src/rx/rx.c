@@ -5,6 +5,7 @@
  *      Author: charlieroman
  */
 
+#include <stddef.h>
 #include "rx/rx.h"
 #include "rx/protocols/pwm_rx.h"
 #include "common/settings.h"
@@ -25,7 +26,7 @@ static const rx_protocol_interface_t *rx_driver = NULL;
   * @param  driver	pointer to rx driver
   * @retval boolean
   */
-static bool valid_rx_driver(rx_protocol_interface_t *driver) {
+static bool valid_rx_driver(const rx_protocol_interface_t *driver) {
 	return (driver &&
 			driver->init &&
 		    driver->deinit &&
@@ -44,9 +45,9 @@ rx_status_t rx_init(void) {
 	/* NOTE: use pre-processor conditionals based
 	* on configured protocol to initialize rx_driver */
 	#if RX_PROTOCOL == RX_PWM_PROTOCOL_ID
-	rx_driver = &pwm_rx_driver;
+		rx_driver = &pwm_rx_driver;
 	#else
-	return RX_ERROR_FATAL;
+		#error "Invalid Rx Protocol Configuration"
 	#endif
 
 	if (!valid_rx_driver(rx_driver))
