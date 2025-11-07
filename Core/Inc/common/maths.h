@@ -27,6 +27,8 @@
 #define MHZ_TO_HZ(freq)   ((freq) * 1000000)
 #define HZ_TO_INTERVAL(freq) (1 / (freq))
 #define INTERVAL_TO_HZ(time) (1 / (time))
+#define HZ_TO_INTERVAL_MS(freq) (1000 / (freq))
+#define MS_INTERVAL_TO_HZ(time) (1000 / (time))
 #define HZ_TO_INTERVAL_US(freq) (1000000 / (freq))
 #define US_INTERVAL_TO_HZ(time) (1000000 / (time))
 #define HZ_TO_RAD_PER_SEC(freq) ((freq) * (2 * PI))
@@ -102,8 +104,8 @@ static inline float avgf(const float arr[], size_t len) {
 }
 
 static inline int signumf(float val) {
-	if (num > 0.0) return 1;
-	if (num < 0.0) return -1;
+	if (val > 0.0) return 1;
+	if (val < 0.0) return -1;
 	return 0;
 }
 
