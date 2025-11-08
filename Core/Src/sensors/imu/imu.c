@@ -6,8 +6,7 @@
  */
 
 #include "sensors/imu/imu.h"
-#include "sensors/imu/lsm6dsox.h"
-#include "lsm6dsox_reg.h"
+#include "sensors/imu/devices/lsm6dsox.h"
 #include "common/hardware.h"
 #include "common/settings.h"
 
@@ -21,8 +20,8 @@
  */
 #define GY_LPF					CONFIG_GY_LPF
 #define XL_LPF					CONFIG_XL_LPF
-#define GY_LPF_CUTOFF_FREQ_RPS	CONFIG_GY_LPF_CUTOFF_FREQ_RPS	// digital filter
-#define XL_LPF_CUTOFF_FREQ_RPS	CONFIG_XL_LPF_CUTOFF_FREQ_RPS	// digital filter
+#define GY_LPF_CUTOFF_FREQ_HZ	CONFIG_GY_LPF_CUTOFF_FREQ_HZ	// digital filter
+#define XL_LPF_CUTOFF_FREQ_HZ	CONFIG_XL_LPF_CUTOFF_FREQ_HZ	// digital filter
 
 /*
  * @brief  IMU Comm Protocol Config Settings
@@ -99,9 +98,6 @@ imu_status_t imu_init(void) {
 	#endif
 
 	#if IMU_DEVICE == LSM6DSOX_DEVICE_ID
-		#if !defined(LSM6DSOX_REGS_H)
-			#error "No Device Driver Found for LSM6DSOX"
-		#endif
 		imu_driver = &lsm6dsox_driver;
 	#else
 		#error "Invalid IMU Device Configuration"
