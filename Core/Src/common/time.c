@@ -5,79 +5,113 @@
  *      Author: charlieroman
  */
 
-#include "main.h"
-#include "maths.h"
-#include "time.h"
+#include "common/time.h"
 
 /*
- * @brief  delay
+ * @brief  computes and returns desired timer clock reference frequency
  *
- * @param  ms       delay in ms
- * @retval None
+ * @param  htim       pointer to HAL timer handle
+ * @retval freq (hz); 0 if invalid
  */
-void delay(uint32_t ms)
-{
-  HAL_Delay(ms);
+uint32_t Get_TIMxClkRefFreqHz(const TIM_HandleTypeDef *htim) {
+	uint32_t APB_PCLK_FREQ_HZ, APB_TIMCLK_FREQ_HZ, PSC, TIMx_ClkRefFreqHz;
+
+	if (htim == NULL)
+		return 0; // Error
+
+	if (htim->Instance == TIM8) {
+		/* Get APB2 Clock Freq */
+		APB_PCLK_FREQ_HZ = HAL_RCC_GetPCLK2Freq();
+
+		/* Get APB2 Timer Clock Freq */
+		APB_TIMCLK_FREQ_HZ = (RCC->CFGR & RCC_CFGR_PPRE2_Msk) != RCC_CFGR_PPRE2_DIV1 ?
+		    				  APB_PCLK_FREQ_HZ * 2 : APB_PCLK_FREQ_HZ; // doubled if PSC > 1
+
+	} else if ((htim->Instance == TIM2) ||
+			   (htim->Instance == TIM3) ||
+			   (htim->Instance == TIM4)) {
+		/* Get APB1 Clock Freq */
+		APB_PCLK_FREQ_HZ = HAL_RCC_GetPCLK1Freq();
+
+	    /* Get APB1 Timer Clock Freq */
+	    APB_TIMCLK_FREQ_HZ = (RCC->CFGR & RCC_CFGR_PPRE1_Msk) != RCC_CFGR_PPRE1_DIV1 ?
+	    					  APB_PCLK_FREQ_HZ * 2 : APB_PCLK_FREQ_HZ; // doubled if PSC > 1
+
+	} else {
+		return 0; // Error
+
+	}
+
+	/* Get Pre-scaler */
+	PSC = htim->Init.Prescaler + 1;
+
+	/* Error Checks */
+	if ((APB_TIMCLK_FREQ_HZ == 0) || (PSC > APB_TIMCLK_FREQ_HZ))
+		return 0; // Error
+
+	/* Compute Timer Clock Reference Freq */
+	TIMx_ClkRefFreqHz = APB_TIMCLK_FREQ_HZ / PSC;
+
+	return TIMx_ClkRefFreqHz;
 }
 
 /*
- * @brief  timer start
+ * @brief  computes and returns desired timer clock reference frequency
  *
- * @param  htim		pointer to HAL timer struct
+ * @param  htim       pointer to HAL timer handle
+ * @retval freq (mhz); 0 if unable to be calculated in mhz as an integral type
+ */
+uint32_t Get_TIMxClkRefFreqMHz(const TIM_HandleTypeDef *htim) {
+	const uint32_t ONE_MILLION = 1000000U;
+
+	/* Get Timer Clock Reference Freq in Hz */
+	uint32_t TIMx_ClkRefFreqHz = Get_TIMxClkRefFreqHz(htim);
+	if (TIMx_ClkRefFreqHz == 0)
+		return 0;
+
+	/* Check if Divisible by 1 Million */
+	if (TIMx_ClkRefFreqHz % ONE_MILLION != 0)
+		return 0;
+
+	return TIMx_ClkRefFreqHz / ONE_MILLION;
+}
+
+/*
+ * @brief  start specified timer peripheral
+ *
+ * @param  htim		pointer to HAL timer handle
  * @retval None
  */
-void start_timer(TIM_HandleTypeDef *htim)
-{
+void start_timer(TIM_HandleTypeDef *htim) {
 	HAL_TIM_Base_Start(htim);
 }
 
 /*
- * @brief  timer stop
+ * @brief  stop specified timer peripheral
  *
- * @param  htim		pointer to HAL timer struct
+ * @param  htim		pointer to HAL timer handle
  * @retval None
  */
-void stop_timer(TIM_HandleTypeDef *htim)
-{
+void stop_timer(TIM_HandleTypeDef *htim) {
 	HAL_TIM_Base_Stop(htim);
 }
 
 /*
- * @brief  program run time
+ * @brief  delay mcu operation for specified time period (ms)
  *
- * @param  None
- * @retval 			program runtime in ms
+ * @param  ms       delay in ms
+ * @retval None
  */
-__weak uint32_t millis(void) //
-{
-	return HAL_GetTick();
+void delay_ms(uint32_t ms) {
+  HAL_Delay(ms);
 }
 
 /*
- * @brief  program run time
+ * @brief  provides a tick value from system clock
  *
  * @param  None
- * @retval 			program runtime in us
+ * @retval tick value (ms)
  */
-uint32_t get_timestamp(void)
-{
-	static uint32_t timestamp;
-	uint16_t dt, count, ref_clk_mhz;
-
-	/* Determine Reference Clock Freq */
-	ref_clk_mhz = APB1_CLK_FREQ_MHZ/(htim6.Init.Prescaler + 1);
-
-	/* Get Counter Value */
-	count = __HAL_TIM_GET_COUNTER(&htim6);
-
-	/* Determine Timestep Since Last Call */
-	dt = count / (ref_clk_mhz);
-
-	/* Add Timestep to Running Total */
-	timestamp += dt;
-
-	/* Reset Counter */
-	__HAL_TIM_SET_COUNTER(&htim6, 0);
-
-	return timestamp;
+uint32_t millis(void) {
+	return HAL_GetTick();
 }

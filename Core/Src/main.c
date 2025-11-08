@@ -23,22 +23,24 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include <string.h>
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <stdbool.h>
+#include <string.h>
 #include <math.h>
 #include "usbd_cdc_if.h"
 
-#include "common/time.h"
-#include "common/maths.h"
-#include "common/led.h"
-#include "flight/system.h"
-#include "flight/failsafe.h"
-#include "flight/pid.h"
+#include "system/system.h"
+#include "system/error.h"
+#include "esc/esc.h"
+#include "rx/rx.h"
+#include "flight/rc_input.h"
+#include "sensors/imu/imu.h"
+#include "flight/attitude.h"
 #include "flight/mixer.h"
-#include "setup/setup.h"
-#include "sensors/imu.h"
-#include "rx/pwm.h"
+#include "common/time.h"
+#include "common/led.h"
+#include "common/settings.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -48,6 +50,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
+#define DEVICE_BOOT_TIME_MS		CONFIG_DEVICE_BOOT_TIME_MS
+#define THRUST_COMP				CONFIG_THRUST_COMP
 
 /* USER CODE END PD */
 
@@ -66,13 +71,11 @@ DMA_HandleTypeDef hdma_sdio_tx;
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
-TIM_HandleTypeDef htim6;
-TIM_HandleTypeDef htim7;
 TIM_HandleTypeDef htim8;
 
 /* USER CODE BEGIN PV */
 
-static uint8_t tx_buffer[1000];	//DEBUG
+static uint8_t tx_buffer[1000];	// DEBUG
 
 /* USER CODE END PV */
 
@@ -86,8 +89,6 @@ static void MX_TIM4_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM8_Init(void);
-static void MX_TIM6_Init(void);
-static void MX_TIM7_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -105,12 +106,20 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
   /* Declare or Initialize Private Variables */
-  uint8_t ready;
-  static mtrCommands mtrCmds;
-  static sensorPackage sensPackage;
-  static systemState sysState = {{.command_limit = ROLL_CMD_LIM, .gains = ROLL_PID, .clamp = 1},
-  	  	  	  	  	  	  	  	 {.command_limit = PITCH_CMD_LIM, .gains = PITCH_PID, .clamp = 1},
-								 {.command_limit = YAW_CMD_LIM, .gains = YAW_PID, .clamp = 1}};
+  bool arm_reset = true;
+
+  rx_status_t rx_status;
+  esc_status_t esc_status;
+  rc_req_status_t rc_status;
+  imu_status_t imu_status;
+  attitude_status_t att_status;
+
+  rc_reqs_t rcReqs = {0.0};
+  imu_6D_t imu = {0};
+  attitude_est_t attEst = {0.0};
+  attitude_cmd_t attCmds = {0.0};
+  mtr_cmds_t mtrCmds = {0.0};
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -140,47 +149,39 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM2_Init();
   MX_TIM8_Init();
-  MX_TIM6_Init();
-  MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
 
-  /* Sensor Setup */
-  sensor_setup(&sensPackage);
+  /* Wait for Devices to Boot */
+  delay_ms(DEVICE_BOOT_TIME_MS);
 
-  /* Initialize ESC Coms */		// calibrate_throttle() ?
-  escInput(ENABLE);
+  /* Initialize ESC and Start Comms */
+  esc_status = esc_init();
+  CHECK(esc_status);
+  esc_status = esc_start();
+  CHECK(esc_status);
 
-  /* Initialize RC Input Channels */
-  rcInput(ENABLE);
+  /* Initialize Rx Interface and Start Comms */
+  rx_status = rx_init();
+  CHECK(rx_status);
+  rx_status = rx_start();
+  CHECK(rx_status);
 
-  /* Start Timer */
-  start_timer(&htim6); //general purpose timer
+  /* Initialize RC Interface */
+  rc_status = rc_init();
+  CHECK(rc_status);
 
-  /* Wait RX Boot Time */
-  delay(20);
+  /* Initialize IMU Interface */
+  imu_status = imu_init();
+  CHECK(imu_status);
 
-  /* Check for arm request from user */
-  while(!armed())
-  {
-	  led_status(WAITING);
-  }
+  /* Initialize Attitude Controller */
+  attitude_controller_init();
 
-  /* Startup Safety Check */
-  ready = ready_to_fly(&sensPackage.imu, &sysState);
+  /* Initialize Motor Mixer */
+  mixer_init();
 
-  if (ready)
-  {
-	  /* Signal Flight Ready Status with LED */
-	  led_status(READY);
-
-	  /* Initialize Motor Inputs (PWM Output) */
-	  arm_drone(ENABLE);
-  }
-  else if (!ready)
-  {
-	  /* Signal Error Status with LED if Initialization Fails */
-	  led_status(ERROR);
-  }
+  /* Signal Flight Ready Status with LED */
+  led_set_status(LED_READY);
 
   /* USER CODE END 2 */
 
@@ -188,63 +189,60 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+		/* Get Remote Control Input */
+		rc_get_requests(&rcReqs);
 
-	 if (armed())
-	 {
-		/* Signal Ready Status with LED */
-		led_status(READY);
+		/* Read IMU */
+		imu_read(&imu);
 
-		/* Get User Input */
-		get_state_request(&sysState);
+		/* Update Attitude Estimation */
+		attitude_estimator_update(&imu, &attEst);
 
-		/* Read Sensor Data */
-		read_sensor_data(&sensPackage);
+		/* Update Attitude PID Controllers */
+		attitude_controller_update(&attCmds, &rcReqs, &attEst, imu.dt);
 
-		/* Estimate State */
-		estimate_state(&sensPackage, &sysState);
+		/* Apply Motor Mixing */
+		mixer_update(&mtrCmds, &attCmds, rcReqs.throttle);
 
-		/* PID Control */
-		control_state(&sensPackage, &sysState);
+		#if THRUST_COMP == ENABLED
+		/* Apply Thrust Compensation */
+		thrust_compensate(&mtrCmds, &attEst);
+		#endif
 
-		/* Apply Motor Mixing Algorithm & Set Duty Cycles */
-		actuator_set(&sensPackage, &sysState, &mtrCmds);
+		/* Check if Remote Control is Armed */
+		if (rc_is_armed()) {
+			/* Set Motor Commands */
+			if (esc_is_armed()) {
+				esc_set_motor_commands(&mtrCmds);
 
-		/* Write to SD Card */
-		//record_data(&sysState, &sensPackage, &mtrCmds)
+			/* Arm ESC (if ready) */
+			} else {
+				/* Check if Ready to Fly */
+				if (ready_to_fly(imu.accel_z, &attEst, rcReqs.throttle)) {
+					led_set_status(LED_READY);
 
-		/* Delay to keep desired loop frequency */
-		//delay_us(0);
+					/* Check if Arm Switch was Reset */
+					if (arm_reset)
+						esc_arm();
 
-//		sprintf((char*)tx_buffer, "mtr1, mtr2, mtr3, mtr4: %f\t%f\t%f\t%f\r\n", mtrCmds.mtr1, mtrCmds.mtr2, mtrCmds.mtr3, mtrCmds.mtr4);
-//		CDC_Transmit_FS(tx_buffer, strlen((char const*)tx_buffer));
+				} else {
+					led_set_status(LED_WAITING);
+					arm_reset = false;
+				}
+			}
 
-//		sprintf((char*)tx_buffer, "roll, pitch, yawrate: %f\t%f\t%f\r\n", sysState.roll.estimate, sysState.pitch.estimate, sysState.yaw.estimate);
-//		CDC_Transmit_FS(tx_buffer, strlen((char const*)tx_buffer));
+		} else {
+			/* Disarm ESC (if not already) */
+			if (esc_is_armed())
+				esc_disarm();
 
-
-	 }
-
-	 else
-	 {
-		/* Disarm Drone */
-		arm_drone(DISABLE);
-
-		/* Signal Waiting Status with LED */
-		led_status(WAITING);
-	 }
+			led_set_status(LED_WAITING);
+			arm_reset = true;
+		}
 
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
-//	sysState.roll.gains[2] = mapf(sysState.pitch.request, -10, 10, -5, 5);
-//	sysState.roll.gains[2] = constrainf(sysState.roll.gains[2], 0, 5);
-//
-//	sprintf((char*)tx_buffer, "D, req, est, cmd, thr: %f\t%f\t%f\t%f\t%f\r\n", sysState.roll.gains[2], sysState.roll.request, sysState.roll.estimate, sysState.roll.command, sysState.throttle.command);
-//	CDC_Transmit_FS(tx_buffer, strlen((char const*)tx_buffer));
-
-//	sprintf((char*)tx_buffer, "P, I, D, cmd: %f\t%f\t%f\t%f\t%f\r\n", sysState.roll.gains[0], sysState.roll.gains[1], sysState.roll.gains[2], sysState.roll.command, sysState.throttle.command);
-//	CDC_Transmit_FS(tx_buffer, strlen((char const*)tx_buffer));
   }
   /* USER CODE END 3 */
 }
@@ -286,7 +284,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV4;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
   {
@@ -378,7 +376,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 84-1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 4294967295;
+  htim2.Init.Period = 65535;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -400,7 +398,7 @@ static void MX_TIM2_Init(void)
   {
     Error_Handler();
   }
-  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_BOTHEDGE;
+  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
   sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
   sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
   sConfigIC.ICFilter = 0;
@@ -462,7 +460,7 @@ static void MX_TIM3_Init(void)
   {
     Error_Handler();
   }
-  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_BOTHEDGE;
+  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
   sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
   sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
   sConfigIC.ICFilter = 0;
@@ -544,82 +542,6 @@ static void MX_TIM4_Init(void)
 }
 
 /**
-  * @brief TIM6 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM6_Init(void)
-{
-
-  /* USER CODE BEGIN TIM6_Init 0 */
-
-  /* USER CODE END TIM6_Init 0 */
-
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-
-  /* USER CODE BEGIN TIM6_Init 1 */
-
-  /* USER CODE END TIM6_Init 1 */
-  htim6.Instance = TIM6;
-  htim6.Init.Prescaler = 84-1;
-  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = 65536-1;
-  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM6_Init 2 */
-
-  /* USER CODE END TIM6_Init 2 */
-
-}
-
-/**
-  * @brief TIM7 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM7_Init(void)
-{
-
-  /* USER CODE BEGIN TIM7_Init 0 */
-
-  /* USER CODE END TIM7_Init 0 */
-
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-
-  /* USER CODE BEGIN TIM7_Init 1 */
-
-  /* USER CODE END TIM7_Init 1 */
-  htim7.Instance = TIM7;
-  htim7.Init.Prescaler = 8400-1;
-  htim7.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim7.Init.Period = 65535;
-  htim7.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim7) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim7, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM7_Init 2 */
-
-  /* USER CODE END TIM7_Init 2 */
-
-}
-
-/**
   * @brief TIM8 Initialization Function
   * @param None
   * @retval None
@@ -640,7 +562,7 @@ static void MX_TIM8_Init(void)
 
   /* USER CODE END TIM8_Init 1 */
   htim8.Instance = TIM8;
-  htim8.Init.Prescaler = 56-1;
+  htim8.Init.Prescaler = 28-1;
   htim8.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim8.Init.Period = 60000-1;
   htim8.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -745,28 +667,23 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LED_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB12 ARM_Pin */
-  GPIO_InitStruct.Pin = GPIO_PIN_12|ARM_Pin;
+  /*Configure GPIO pins : ARM_Pin MODE_Pin */
+  GPIO_InitStruct.Pin = ARM_Pin|MODE_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : SD_DETECT_Pin */
+  GPIO_InitStruct.Pin = SD_DETECT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  HAL_GPIO_Init(SD_DETECT_GPIO_Port, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
-
-/**
-  * @brief  Input Capture Callback. ISR triggered when mc receives signal from rx
-  *
-  * @param  htim 	pointer to HAL Timer struct
-  * @retval None
-  */
-void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
-{
-	read_rc_input(htim);
-}
 
 /* USER CODE END 4 */
 
@@ -781,6 +698,7 @@ void Error_Handler(void)
   __disable_irq();
   while (1)
   {
+	  led_set_status(LED_ERROR);
   }
   /* USER CODE END Error_Handler_Debug */
 }

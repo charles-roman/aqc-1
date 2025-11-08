@@ -5,98 +5,110 @@
  *      Author: charlieroman
  */
 
-#include <stdint.h>
-#include <string.h>
 #include <math.h>
-#include "../common/maths.h"
-#include "pid.h"
-#include "mixer.h"
-#include "system.h"
+#include "flight/pid.h"
+#include "common/maths.h"
 
 /**
-  * @brief attitude command saturation check
+  * @brief pid controller update
   *
-  * @param  st		pointer to state struct
-  * @retval 		logical value (1 or 0)
+  * @param  pid				pointer to pid controller handle
+  * @param  setpoint		requested state value
+  * @param	measurement		estimated state value
+  * @param	dt				timestep
+  *
+  * @retval pid controller output (constrained)
   */
-static uint8_t saturation_check(state *st)
-{
-	return (fabs(st->command) > st->command_limit);
+float pid_update(pid_ctrl_t *pid, float setpoint, float measurement, float dt) {
+	/* Error Signal */
+    float error = setpoint - measurement;
+
+    /* Integrator (with hold detection anti-windup clamp) */
+    if (pid->integrator_enable) {
+		/* Command Saturation Check */
+		bool is_saturated = fabs(pid->out) >= pid->limit;
+
+		/* Integrator Windup Check */
+		bool is_winding = SIGN(error) == SIGN(pid->integrator);
+
+		/* Only integrate if not contributing to saturation */
+		if (!(is_saturated && is_winding)) {
+			pid->integrator += 0.5f * (error + pid->prev_error) * dt;
+			pid->integrator = constrainf(pid->integrator, -pid->integrator_limit, pid->integrator_limit);
+		}
+    }
+    	// can optionally decay integrator slowly when disabled
+
+    /* Band-limited Differentiator (on measurement) */
+    pid->differentiator = (2.0f * (pid->prev_measurement - measurement)
+    				    + (2.0f * pid->tau - dt) * pid->differentiator)
+    					/ (2.0f * pid->tau + dt);
+
+    /* Compute PID Output */
+    pid->out = pid->Kp * error
+             + pid->Ki * pid->integrator
+             + pid->Kd * pid->differentiator;
+
+    /* Cache Error and Measurement */
+    pid->prev_error = error;
+    pid->prev_measurement = measurement;
+
+    /* Constrain Output */
+    return constrainf(pid->out, -pid->limit, pid->limit);
 }
 
-/**
-  * @brief integral windup check
-  *
-  * @param  st		pointer to state struct
-  * @retval 		logical value (1 or 0)
-  */
-static uint8_t windup_check(state *st)
-{
-	return (SIGN(st->error) == SIGN(st->command));
-}
 
 /**
-  * @brief integral clamping
+  * @brief init pid controller
   *
-  * @param  st		pointer to state struct
+  * @param  ctrl	pointer pid controller handle
+  * @param  config	pointer to pid config handle
+  *
   * @retval None
   */
-static void clamping(state *st)
-{
-	uint8_t saturating = saturation_check(st);
-	uint8_t winding = windup_check(st);
-	uint8_t integrating = st->clamp;
+void pid_init(pid_ctrl_t *ctrl, const pid_config_t *config) {
+	ctrl->Kp = config->Kp;
+	ctrl->Ki = config->Ki;
+	ctrl->Kd = config->Kd;
+	ctrl->limit = config->limit;
+	ctrl->integrator_limit = config->integrator_limit;
+	ctrl->tau = RAD_PER_SEC_TO_INTERVAL(HZ_TO_RAD_PER_SEC(config->Wc));
 
-	if ((saturating && winding) && integrating)
-	{
-		st->clamp = 0;
-	}
-	else if ((!saturating || !winding) && !integrating)
-	{
-		st->clamp = 1;
-	}
+	ctrl->prev_error = 0.0f;
+	ctrl->prev_measurement = 0.0f;
+	ctrl->integrator = 0.0f;
+	ctrl->integrator_enable = true;
+	ctrl->differentiator = 0.0f;
+	ctrl->out = 0.0f;
 }
 
 /**
-  * @brief pid controller
+  * @brief resync pid controller to current state
   *
-  * @param  st		pointer to state struct
-  * @param  dt		timestep
+  * @param  ctrl			pointer pid controller handle
+  * @param  setpoint		requested state value
+  * @param	measurement		estimated state value
   *
   * @retval None
   */
-void pid_control(state *st, float dt)
-{
-	/*PID GAINS*/
-	float K[3];
-	memcpy(K, st->gains, sizeof(st->gains));
+void pid_resync(pid_ctrl_t *pid, float setpoint, float measurement) {
+	pid->prev_error = setpoint - measurement;
+	pid->prev_measurement = measurement;
+	pid->integrator = 0.0f;
+	pid->differentiator = 0.0f;
+}
 
-	/*Calculate Error*/
-	float error;
-	error = st->request - st->estimate;
-
-	/*Calculate Control Signal*/
-	float p, i, d;
-	p = K[0]*error;
-	i = (st->clamp)*(K[1]*dt/2)*(error + st->error) + st->integrator;
-	d = ((2.0f*K[2]*LPF_CUTOFF_FREQ)*(st->prev_estimate - st->estimate) +	// (error - st->error)
-			(2.0f - dt*LPF_CUTOFF_FREQ)*st->differentiator)/(2.0f + dt*LPF_CUTOFF_FREQ);
-
-	st->command = p + i + d;
-
-	/*Update Error, Control Terms, and Previous Measurement*/
-	st->error = error;
-	st->integrator = i;
-	st->differentiator = d;
-	st->prev_estimate = st->estimate;
-
-	/*Inf Check*/
-
-	/*NaN Check*/
-
-	/*Update Integrator Clamp*/
-	clamping(st);
-
-	/*Constrain Control Signal*/
-	st->command = constrainf(st->command, -st->command_limit, st->command_limit);
+/**
+  * @brief reset pid controller
+  *
+  * @param  ctrl	pointer pid controller handle
+  * @retval None
+  */
+void pid_reset(pid_ctrl_t *pid) {
+	pid->prev_error = 0.0f;
+	pid->prev_measurement = 0.0f;
+	pid->integrator = 0.0f;
+	pid->integrator_enable = true;
+	pid->differentiator = 0.0f;
+	pid->out = 0.0f;
 }

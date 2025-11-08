@@ -1,5 +1,0 @@
-../Core/Src/flight/../common/maths.h:56:21:constrainf	3
-../Core/Src/flight/pid.c:22:16:saturation_check	1
-../Core/Src/flight/pid.c:33:16:windup_check	1
-../Core/Src/flight/pid.c:44:13:clamping	7
-../Core/Src/flight/pid.c:68:6:pid_control	1
