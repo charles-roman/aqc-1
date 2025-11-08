@@ -6,7 +6,7 @@
  */
 
 #include <string.h>
-#include "sensors/imu/lsm6dsox.h"
+#include "sensors/imu/devices/lsm6dsox.h"
 #include "lsm6dsox_reg.h"
 
 /*
@@ -109,6 +109,10 @@ static void platform_delay(uint32_t ms) {
   * @retval lsm6dsox status type
   */
 static lsm6dsox_interface_status_t lsm6dsox_init(void) {
+	#if !defined(LSM6DSOX_REGS_H)
+		#error "No Device Driver Found for LSM6DSOX"
+	#endif
+
 	uint8_t whoamI, rst;
 
 	/* Initialize mems driver interface */
